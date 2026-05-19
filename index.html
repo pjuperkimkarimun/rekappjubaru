@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karimunku Terang - WebGIS</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        #map { height: 400px; width: 100%; border-radius: 0.5rem; z-index: 1;}
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        #customAlert { display: none; }
+        #customAlert.active { display: flex; }
+        
+        /* CSS Khusus untuk Fitur Cetak (Print) */
+        .print-photos { display: none; }
+        @media print {
+            @page { size: landscape; margin: 1cm; }
+            body { background-color: white; color: black; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            
+            nav, .tab-nav, #printModal, #customAlert, #photoModal { display: none !important; }
+            
+            main { padding: 0 !important; max-width: 100% !important; margin: 0 !important; }
+            .shadow-md { box-shadow: none !important; }
+            .rounded-lg { border-radius: 0 !important; }
+            .bg-white { background: transparent !important; border: none !important; }
+            
+            .col-aksi { display: none !important; }
+            
+            body.print-table-no-foto .col-foto { display: none !important; }
+            body.print-tauble-with-foto .col-foto { display: table-cell !important; width: 48%; } 
+            body.print-table-with-foto .btn-lihat { display: none !important; }
+            
+            /* Paksa 5 foto menjadi 1 baris (nowrap) dan jarak dirapikan */
+            body.print-table-with-foto .print-photos { display: flex !important; justify-content: center; gap: 4px; flex-wrap: nowrap !important; padding: 5px 0; }
+            
+            /* Ukuran foto disesuaikan agar 5 gambar muat sejajar */
+            body.print-table-with-foto .print-photos img { 
+                width: 80px !important; 
+                height: 80px !important; 
+                object-fit: contain !important; 
+                background-color: #f8fafc !important; 
+                border: 1px solid #cbd5e1 !important;
+                border-radius: 4px !important;
+            }
+            
+            table { width: 100% !important; border-collapse: collapse !important; font-size: 11px !important; }
+            th, td { border: 1px solid #ddd !important; padding: 6px !important; vertical-align: middle !important; }
+            th { background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            
+            td .text-sm { font-size: 11px !important; line-height: 1.4 !important; }
+            td .text-xs { font-size: 9px !important; }
+            
+            .print-map-active #mainMap { height: 500px !important; width: 100% !important; border: 2px solid #000 !important; page-break-after: always; }
+            .print-map-hidden #mainMap-container { display: none !important; }
+            .print-table-hidden #table-container { display: none !important; }
+            
+            #printHeader { display: block !important; text-align: center; margin-bottom: 20px; }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <nav class="bg-blue-600 text-white shadow-md no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fa-solid fa-lightbulb text-2xl mr-3 text-yellow-300"></i>
+                    <span class="font-bold text-xl">Karimunku Terang</span>
+                </div>
+                <div id="authStatus" class="text-sm px-3 py-1 bg-blue-700 rounded-full flex items-center">
+                    <div class="w-2 h-2 rounded-full bg-yellow-400 mr-2 animate-pulse" id="authDot"></div>
+                    <span id="authText">Menghubungkan...</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 tab-nav no-print">
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                <button onclick="switchTab('input')" id="tab-input" class="border-blue-500 text-blue-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center">
+                    <i class="fa-solid fa-plus mr-2"></i> Input Data Baru
+                </button>
+                <button onclick="switchTab('rekap')" id="tab-rekap" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center">
+                    <i class="fa-solid fa-table mr-2"></i> Data Rekap & Peta
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <div id="printHeader" class="hidden text-center py-4 mb-4 border-b-2 border-black">
+        <h1 class="text-2xl font-bold uppercase">Laporan Pemasangan Lampu Baru</h1>
+        <h2 class="text-lg font-semibold uppercase">Program "Karimunku Terang"</h2>
+        <p class="text-sm text-gray-600" id="printDate"></p>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" id="mainContent">
+        
+        <section id="input-section" class="tab-content active no-print">
+            <div class="bg-white rounded-lg shadow-md p-6 max-w-4xl mx-auto border border-gray-100">
+                <h2 class="text-2xl font-bold mb-6 text-gray-700 border-b pb-2"><i class="fa-solid fa-pen-to-square mr-2"></i>Form Input Pemasangan Baru</h2>
+                
+                <form id="lampForm" class="space-y-6">
+                    <div id="formLoading" class="hidden absolute inset-0 bg-white/90 z-20 flex flex-col items-center justify-center rounded-lg backdrop-blur-sm">
+                        <i class="fa-solid fa-spinner fa-spin text-5xl text-blue-600 mb-4"></i>
+                        <span class="text-blue-800 font-bold text-lg">Mengunggah Foto & Menyimpan Data...</span>
+                        <span class="text-sm text-gray-500 mt-2">Mohon jangan tutup halaman ini</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Nomor Urut</label>
+                            <input type="number" id="nomorUrut" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border" placeholder="Contoh: 1">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Jenis/Merk Lampu</label>
+                            <input type="text" id="jenisLampu" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border" placeholder="Contoh: LED Philips 120W">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Serial Number Lampu</label>
+                            <div class="mt-1 flex rounded-md shadow-sm">
+                                <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-100 text-gray-700 sm:text-sm font-bold">SN-</span>
+                                <input type="text" id="serialNumber" required class="flex-1 block w-full min-w-0 rounded-none rounded-r-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border" placeholder="Masukkan nomor (Contoh: 0202002)">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Kecamatan (Kab. Karimun)</label>
+                            <select id="kecamatan" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border bg-white">
+                                <option value="" disabled selected>Pilih Kecamatan</option>
+                                <option value="Karimun">Karimun</option>
+                                <option value="Buru">Buru</option>
+                                <option value="Kundur">Kundur</option>
+                                <option value="Kundur Utara">Kundur Utara</option>
+                                <option value="Kundur Barat">Kundur Barat</option>
+                                <option value="Moro">Moro</option>
+                                <option value="Meral">Meral</option>
+                                <option value="Tebing">Tebing</option>
+                                <option value="Belat">Belat</option>
+                                <option value="Ungar">Ungar</option>
+                                <option value="Meral Barat">Meral Barat</option>
+                                <option value="Durai">Durai</option>
+                                <option value="Sugie Besar">Sugie Besar</option>
+                                <option value="Selat Gelam">Selat Gelam</option>
+                            </select>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Titik Koordinat Lokasi Pemasangan</label>
+                            <div class="flex flex-wrap gap-2 mb-2">
+                                <button type="button" onclick="getLocation()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded text-sm transition flex items-center shadow-sm">
+                                    <i class="fa-solid fa-location-crosshairs text-blue-600 mr-2"></i> Dapatkan Lokasi Saat Ini (GPS)
+                                </button>
+                                <span class="text-xs text-gray-500 self-center">*Atau ketuk peta di bawah untuk menentukan titik manual</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 mb-2">
+                                <div><input type="text" id="latitude" required readonly class="bg-gray-100 mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border text-gray-600 font-mono" placeholder="Latitude"></div>
+                                <div><input type="text" id="longitude" required readonly class="bg-gray-100 mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border text-gray-600 font-mono" placeholder="Longitude"></div>
+                            </div>
+                            
+                            <div class="relative w-full mb-2 shadow-sm rounded-md overflow-hidden">
+                                <div id="overlayMapPicker" onclick="unlockMap('mapPicker')" class="absolute inset-0 z-[10] bg-black/40 flex flex-col items-center justify-center cursor-pointer transition-opacity hover:bg-black/50 backdrop-blur-[1px]">
+                                    <i class="fa-solid fa-hand-pointer text-3xl text-white mb-2 drop-shadow-md animate-bounce"></i>
+                                    <span class="text-white font-semibold drop-shadow-md text-sm text-center px-4">Peta Dikunci Agar Tidak Mengganggu Scroll Layar HP.<br>Ketuk Disini Untuk Membuka Kunci.</span>
+                                </div>
+                                <div id="mapPicker" class="h-72 w-full z-0 relative bg-gray-200"></div>
+                            </div>
+                            
+                            <input type="url" id="linkMaps" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border bg-gray-50 text-blue-600 underline" placeholder="Link Google Maps (Otomatis Dibuat)" readonly>
+                        </div>
+
+                        <!-- KOLOM UPLOAD FOTO 5 BUAH -->
+                        <div class="md:col-span-2 bg-blue-50/50 p-4 rounded-md border-2 border-dashed border-blue-200">
+                            <h3 class="text-sm font-bold text-gray-800 mb-2"><i class="fa-solid fa-camera mr-2 text-blue-600"></i>Dokumentasi Pemasangan</h3>
+                            <p class="text-xs text-gray-500 mb-4 bg-white inline-block px-2 py-1 rounded shadow-sm"><i class="fa-solid fa-info-circle mr-1"></i> Klik "Choose File" untuk memotret atau memilih foto dari Galeri.</p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                                <div class="bg-white p-3 border border-gray-200 rounded-lg shadow-sm hover:shadow transition">
+                                    <label class="block text-xs font-semibold text-gray-700 mb-2">1. Sebelum</label>
+                                    <input type="file" id="fotoSebelum" accept="image/*" required onchange="previewImage(this, 'previewSeb')" class="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                                    <div class="mt-3 bg-gray-100 rounded border border-gray-200 h-24 flex items-center justify-center overflow-hidden">
+                                        <img id="previewSeb" class="hidden max-h-full max-w-full object-contain">
+                                        <i class="fa-regular fa-image text-2xl text-gray-300" id="iconSeb"></i>
+                                    </div>
+                                </div>
+                                <div class="bg-white p-3 border border-gray-200 rounded-lg shadow-sm hover:shadow transition">
+                                    <label class="block text-xs font-semibold text-gray-700 mb-2">2. Pengerjaan</label>
+                                    <input type="file" id="fotoProses" accept="image/*" required onchange="previewImage(this, 'previewPro')" class="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                                    <div class="mt-3 bg-gray-100 rounded border border-gray-200 h-24 flex items-center justify-center overflow-hidden">
+                                        <img id="previewPro" class="hidden max-h-full max-w-full object-contain">
+                                        <i class="fa-regular fa-image text-2xl text-gray-300" id="iconPro"></i>
+                                    </div>
+                                </div>
+                                <div class="bg-white p-3 border border-gray-200 rounded-lg shadow-sm hover:shadow transition">
+                                    <label class="block text-xs font-semibold text-gray-700 mb-2">3. Selesai</label>
+                                    <input type="file" id="fotoSelesai" accept="image/*" required onchange="previewImage(this, 'previewSel')" class="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                                    <div class="mt-3 bg-gray-100 rounded border border-gray-200 h-24 flex items-center justify-center overflow-hidden">
+                                        <img id="previewSel" class="hidden max-h-full max-w-full object-contain">
+                                        <i class="fa-regular fa-image text-2xl text-gray-300" id="iconSel"></i>
+                                    </div>
+                                </div>
+                                <div class="bg-white p-3 border border-gray-200 rounded-lg shadow-sm hover:shadow transition">
+                                    <label class="block text-xs font-semibold text-gray-700 mb-2">4. Lampu Baru</label>
+                                    <input type="file" id="fotoBaru" accept="image/*" required onchange="previewImage(this, 'previewBaru')" class="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                                    <div class="mt-3 bg-gray-100 rounded border border-gray-200 h-24 flex items-center justify-center overflow-hidden">
+                                        <img id="previewBaru" class="hidden max-h-full max-w-full object-contain">
+                                        <i class="fa-regular fa-image text-2xl text-gray-300" id="iconBaru"></i>
+                                    </div>
+                                </div>
+                                <div class="bg-white p-3 border border-gray-200 rounded-lg shadow-sm hover:shadow transition">
+                                    <label class="block text-xs font-semibold text-gray-700 mb-2">5. Lampu Lama</label>
+                                    <input type="file" id="fotoLama" accept="image/*" required onchange="previewImage(this, 'previewLama')" class="block w-full text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                                    <div class="mt-3 bg-gray-100 rounded border border-gray-200 h-24 flex items-center justify-center overflow-hidden">
+                                        <img id="previewLama" class="hidden max-h-full max-w-full object-contain">
+                                        <i class="fa-regular fa-image text-2xl text-gray-300" id="iconLama"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700">Keterangan Tambahan (Opsional)</label>
+                            <textarea id="keterangan" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border" placeholder="Kondisi tiang, cuaca, kendala pengerjaan, dll..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end pt-4 border-t border-gray-200 mt-6">
+                        <button type="button" onclick="resetForm()" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 mr-3 transition">Reset Form</button>
+                        <button type="submit" id="btnSubmit" class="bg-blue-600 border border-transparent rounded-md shadow-sm py-2 px-6 inline-flex justify-center items-center text-sm font-bold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
+                            <i class="fa-solid fa-cloud-arrow-up mr-2"></i> Simpan ke Database
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section id="rekap-section" class="tab-content">
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6 no-print flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
+                        </div>
+                        <input type="text" id="searchInput" onkeyup="applyFilters()" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2" placeholder="Cari SN, Lampu, No Urut...">
+                    </div>
+                    <select id="filterKecamatan" onchange="applyFilters()" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block p-2 w-full sm:w-48">
+                        <option value="ALL">Semua Kecamatan</option>
+                        <option value="Karimun">Karimun</option>
+                        <option value="Buru">Buru</option>
+                        <option value="Kundur">Kundur</option>
+                        <option value="Kundur Utara">Kundur Utara</option>
+                        <option value="Kundur Barat">Kundur Barat</option>
+                        <option value="Moro">Moro</option>
+                        <option value="Meral">Meral</option>
+                        <option value="Tebing">Tebing</option>
+                        <option value="Belat">Belat</option>
+                        <option value="Ungar">Ungar</option>
+                        <option value="Meral Barat">Meral Barat</option>
+                        <option value="Durai">Durai</option>
+                        <option value="Sugie Besar">Sugie Besar</option>
+                        <option value="Selat Gelam">Selat Gelam</option>
+                    </select>
+                </div>
+                
+                <div class="flex gap-2 w-full md:w-auto">
+                    <button onclick="refreshMap()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-md text-sm font-medium transition flex items-center justify-center flex-1 md:flex-none">
+                        <i class="fa-solid fa-rotate-right mr-2"></i> Segarkan Peta
+                    </button>
+                    <button onclick="openPrintModal()" class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md text-sm font-medium shadow-sm transition flex items-center justify-center flex-1 md:flex-none">
+                        <i class="fa-solid fa-print mr-2"></i> Cetak Laporan
+                    </button>
+                </div>
+            </div>
+
+            <div id="mainMap-container" class="bg-white rounded-lg shadow-md p-4 mb-6 border border-gray-100 print-map-container">
+                <div class="flex justify-between items-center mb-4 no-print">
+                    <h2 class="text-xl font-bold text-gray-700 flex items-center"><i class="fa-solid fa-map-location-dot text-blue-600 mr-2"></i>Peta Persebaran Pemasangan</h2>
+                    <span id="mapPointCount" class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full border border-blue-200">0 Titik Ditampilkan</span>
+                </div>
+                <div class="relative w-full rounded-lg overflow-hidden border border-gray-300" style="height: 500px;">
+                    <div id="overlayMainMap" onclick="unlockMap('mainMap')" class="absolute inset-0 z-[10] bg-black/30 flex flex-col items-center justify-center cursor-pointer transition-opacity hover:bg-black/40 backdrop-blur-[1px] no-print">
+                        <i class="fa-solid fa-hand-pointer text-4xl text-white mb-3 drop-shadow-lg animate-bounce"></i>
+                        <span class="text-white font-bold drop-shadow-lg text-lg text-center px-4">Peta Dalam Mode Terkunci<br><span class="text-sm font-normal">Ketuk untuk Berinteraksi dengan Peta GIS</span></span>
+                    </div>
+                    <div id="mainMap" class="w-full h-full z-0 relative bg-gray-100"></div>
+                </div>
+            </div>
+
+            <div id="table-container" class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 print-table-container">
+                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50 no-print">
+                    <h2 class="text-lg font-bold text-gray-700"><i class="fa-solid fa-table-list text-blue-600 mr-2"></i>Tabel Rekapitulasi Data</h2>
+                    <span id="totalDataCount" class="bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-sm">Total: 0 Lampu</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200" id="dataTable">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">No</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Kecamatan</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Detail Lampu</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Titik Koordinat</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Keterangan</th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider col-foto">Dokumentasi</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider col-aksi">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody" class="bg-white divide-y divide-gray-200">
+                            <tr><td colspan="7" class="px-6 py-10 text-center text-gray-500"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Memuat data dari database...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Cetak -->
+    <div id="printModal" class="fixed inset-0 bg-gray-900/50 z-50 hidden items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+            <h3 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2"><i class="fa-solid fa-print text-blue-600 mr-2"></i>Pengaturan Cetak Laporan</h3>
+            <p class="text-sm text-gray-600 mb-4">Pilih bagian mana saja yang ingin Anda sertakan di dalam laporan cetak (PDF/Kertas).</p>
+            <div class="space-y-3 mb-6">
+                <label class="flex items-center p-3 border rounded cursor-pointer hover:bg-gray-50 transition">
+                    <input type="checkbox" id="printOptMap" checked class="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                    <div class="ml-3"><span class="block font-medium text-gray-900">Sertakan Peta Persebaran</span></div>
+                </label>
+                <label class="flex items-center p-3 border rounded cursor-pointer hover:bg-gray-50 transition">
+                    <input type="checkbox" id="printOptTable" checked class="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                    <div class="ml-3"><span class="block font-medium text-gray-900">Sertakan Tabel Rekapitulasi</span></div>
+                </label>
+                <label class="flex items-center p-3 border rounded cursor-pointer hover:bg-gray-50 transition">
+                    <input type="checkbox" id="printOptFoto" class="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                    <div class="ml-3"><span class="block font-medium text-gray-900">Sertakan Foto Dokumentasi</span></div>
+                </label>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button onclick="closePrintModal()" class="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">Batal</button>
+                <button onclick="executePrint()" class="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700 shadow-sm flex items-center">
+                    <i class="fa-solid fa-file-pdf mr-2"></i> Lanjutkan Cetak
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Modal -->
+    <div id="customAlert" class="fixed inset-0 bg-gray-900/50 z-[60] items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4">
+            <div class="text-center mb-4">
+                <div id="alertIcon" class="mx-auto flex items-center justify-center h-14 w-14 rounded-full mb-4"></div>
+                <h3 id="alertTitle" class="text-lg font-bold text-gray-900">Pesan</h3>
+                <div class="mt-2 text-sm text-gray-600" id="alertMessage"></div>
+            </div>
+            <button type="button" onclick="closeAlert()" class="w-full justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500">Mengerti</button>
+        </div>
+    </div>
+
+    <!-- MODAL LIHAT 5 FOTO -->
+    <div id="photoModal" class="fixed inset-0 bg-black/90 z-[70] hidden items-center justify-center p-4 backdrop-blur-md">
+        <button onclick="closePhotoModal()" class="absolute top-4 right-4 text-white hover:text-red-400 transition text-4xl w-10 h-10 flex justify-center items-center rounded-full bg-black/50 hover:bg-black/80">&times;</button>
+        <div class="bg-white rounded-xl max-w-7xl w-full p-5 overflow-y-auto max-h-[90vh] shadow-2xl">
+            <h3 class="text-xl font-bold mb-4 text-center border-b pb-3 text-gray-800" id="photoModalTitle"><i class="fa-solid fa-images mr-2 text-blue-600"></i>Dokumentasi Pemasangan</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div class="flex flex-col items-center bg-gray-50 p-2 rounded-lg border">
+                    <h4 class="font-bold text-gray-700 mb-2 bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs">Sebelum</h4>
+                    <div class="w-full aspect-[4/3] bg-gray-200 rounded flex items-center justify-center overflow-hidden border border-gray-300 relative group">
+                        <img id="imgSeb" src="" class="w-full h-full object-contain">
+                    </div>
+                </div>
+                <div class="flex flex-col items-center bg-gray-50 p-2 rounded-lg border">
+                    <h4 class="font-bold text-gray-700 mb-2 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs">Pengerjaan</h4>
+                    <div class="w-full aspect-[4/3] bg-gray-200 rounded flex items-center justify-center overflow-hidden border border-gray-300 relative group">
+                        <img id="imgPro" src="" class="w-full h-full object-contain">
+                    </div>
+                </div>
+                <div class="flex flex-col items-center bg-gray-50 p-2 rounded-lg border">
+                    <h4 class="font-bold text-gray-700 mb-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs">Selesai</h4>
+                    <div class="w-full aspect-[4/3] bg-gray-200 rounded flex items-center justify-center overflow-hidden border border-gray-300 relative group">
+                        <img id="imgSel" src="" class="w-full h-full object-contain">
+                    </div>
+                </div>
+                <div class="flex flex-col items-center bg-gray-50 p-2 rounded-lg border">
+                    <h4 class="font-bold text-gray-700 mb-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs">Lampu Baru</h4>
+                    <div class="w-full aspect-[4/3] bg-gray-200 rounded flex items-center justify-center overflow-hidden border border-gray-300 relative group">
+                        <img id="imgBaru" src="" class="w-full h-full object-contain">
+                    </div>
+                </div>
+                <div class="flex flex-col items-center bg-gray-50 p-2 rounded-lg border">
+                    <h4 class="font-bold text-gray-700 mb-2 bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs">Lampu Lama</h4>
+                    <div class="w-full aspect-[4/3] bg-gray-200 rounded flex items-center justify-center overflow-hidden border border-gray-300 relative group">
+                        <img id="imgLama" src="" class="w-full h-full object-contain">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100 text-sm text-gray-800 shadow-inner">
+                <div class="font-bold text-blue-800 mb-1"><i class="fa-solid fa-comment-dots mr-1"></i>Keterangan Lapangan:</div>
+                <div id="ketModal" class="italic text-gray-600 bg-white p-2 rounded border border-white mt-1"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === GANTI STRING DI BAWAH INI DENGAN URL WEB APP GOOGLE SCRIPT ANDA YANG BARU DI-DEPLOY ===
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbxLGrRmddtVsgw_v5zO1XE0hq_EwgOPcE_mXN0poOtqg5x4_Gm4r-Lkh056bPQ2Y3S5pA/exec";
+        
+        let dataLampuRaw = []; 
+        let dataLampuFiltered = []; 
+        let mapPicker, mainMap; 
+        let markerPicker; 
+        let mainMapMarkers = []; 
+        
+        const KARIMUN_CENTER = [0.9997, 103.4283]; 
+        const ZOOM_LEVEL_KAB = 10;
+        const ZOOM_LEVEL_DETAIL = 15;
+
+        const showAlert = (title, message, isError = false) => {
+            document.getElementById('alertTitle').innerText = title;
+            document.getElementById('alertMessage').innerText = message;
+            document.getElementById('alertIcon').innerHTML = isError ? 
+                '<i class="fa-solid fa-xmark text-red-600 text-3xl"></i>' : 
+                '<i class="fa-solid fa-check text-green-600 text-3xl"></i>';
+            document.getElementById('alertIcon').className = isError ? 
+                'mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4 shadow-inner' : 
+                'mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4 shadow-inner';
+            document.getElementById('customAlert').classList.add('active');
+        };
+
+        window.closeAlert = () => document.getElementById('customAlert').classList.remove('active');
+
+        window.switchTab = (tabName) => {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('[id^="tab-"]').forEach(el => {
+                el.classList.remove('border-blue-500', 'text-blue-600');
+                el.classList.add('border-transparent', 'text-gray-500');
+            });
+            document.getElementById(`${tabName}-section`).classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.remove('border-transparent', 'text-gray-500');
+            document.getElementById(`tab-${tabName}`).classList.add('border-blue-500', 'text-blue-600');
+            if(tabName === 'input' && mapPicker) setTimeout(() => mapPicker.invalidateSize(), 100);
+            if(tabName === 'rekap' && mainMap) setTimeout(() => { mainMap.invalidateSize(); renderMapMarkers(); }, 100);
+        };
+
+        function initMaps() {
+            mapPicker = L.map('mapPicker', { scrollWheelZoom: false, dragging: false, touchZoom: false, doubleClickZoom: false }).setView(KARIMUN_CENTER, ZOOM_LEVEL_KAB);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(mapPicker);
+            mapPicker.on('click', function(e) { updateLocationInput(e.latlng.lat, e.latlng.lng); });
+
+            mainMap = L.map('mainMap', { scrollWheelZoom: false, dragging: false, touchZoom: false, doubleClickZoom: false }).setView(KARIMUN_CENTER, ZOOM_LEVEL_KAB);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(mainMap);
+        }
+
+        window.unlockMap = (mapId) => {
+            if (mapId === 'mapPicker' && mapPicker) { mapPicker.dragging.enable(); mapPicker.touchZoom.enable(); mapPicker.scrollWheelZoom.enable(); mapPicker.doubleClickZoom.enable(); document.getElementById('overlayMapPicker').classList.add('hidden'); } 
+            else if (mapId === 'mainMap' && mainMap) { mainMap.dragging.enable(); mainMap.touchZoom.enable(); mainMap.scrollWheelZoom.enable(); mainMap.doubleClickZoom.enable(); document.getElementById('overlayMainMap').classList.add('hidden'); }
+        };
+
+        function lockMap(mapId) {
+            if (mapId === 'mapPicker' && mapPicker) { mapPicker.dragging.disable(); mapPicker.touchZoom.disable(); mapPicker.scrollWheelZoom.disable(); mapPicker.doubleClickZoom.disable(); document.getElementById('overlayMapPicker').classList.remove('hidden'); } 
+            else if (mapId === 'mainMap' && mainMap) { mainMap.dragging.disable(); mainMap.touchZoom.disable(); mainMap.scrollWheelZoom.disable(); mainMap.doubleClickZoom.disable(); document.getElementById('overlayMainMap').classList.remove('hidden'); }
+        }
+
+        function updateLocationInput(lat, lng) {
+            document.getElementById('latitude').value = lat.toFixed(6); document.getElementById('longitude').value = lng.toFixed(6);
+            document.getElementById('linkMaps').value = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+            if (markerPicker) markerPicker.setLatLng([lat, lng]); else markerPicker = L.marker([lat, lng]).addTo(mapPicker);
+            mapPicker.setView([lat, lng], ZOOM_LEVEL_DETAIL);
+        }
+
+        window.getLocation = () => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => { updateLocationInput(position.coords.latitude, position.coords.longitude); unlockMap('mapPicker'); },
+                    (error) => showAlert('Error Lokasi', 'Pastikan GPS aktif dan izin diberikan.', true)
+                );
+            } else showAlert('Error', 'Browser tidak mendukung GPS.', true);
+        };
+
+        window.refreshMap = () => { if(mainMap) { mainMap.invalidateSize(); renderMapMarkers(); mainMap.setView(KARIMUN_CENTER, ZOOM_LEVEL_KAB); lockMap('mainMap'); } };
+
+        function getBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader(); reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result); reader.onerror = error => reject(error);
+            });
+        }
+
+        async function fetchData() {
+            if (GAS_URL.includes("MASUKKAN_URL")) return;
+            try {
+                document.getElementById('authText').innerText = "Sinkronisasi...";
+                const response = await fetch(GAS_URL);
+                const result = await response.json();
+                if(result.status === 'success') {
+                    dataLampuRaw = result.data.map(item => {
+                        const clean = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        const getV = (possibleKeys) => { 
+                            const cleanKeys = possibleKeys.map(clean);
+                            for(let k of Object.keys(item)) {
+                                if(item[k] && cleanKeys.includes(clean(k))) return item[k];
+                            }
+                            return ''; 
+                        };
+                        return {
+                            ...item,
+                            nomorUrut: getV(['nomorUrut', 'No Urut']),
+                            kecamatan: getV(['kecamatan', 'Kecamatan']),
+                            jenisLampu: getV(['jenisLampu', 'Jenis Lampu']),
+                            serialNumber: getV(['serialNumber', 'Serial Number']),
+                            lat: getV(['lat', 'Latitude']),
+                            lng: getV(['lng', 'Longitude']),
+                            linkMaps: getV(['linkMaps', 'Link Maps']),
+                            keterangan: getV(['keterangan', 'Keterangan'])
+                        };
+                    });
+
+                    dataLampuRaw.sort((a, b) => (parseInt(a.nomorUrut) || 0) - (parseInt(b.nomorUrut) || 0));
+                    applyFilters();
+                    document.getElementById('authText').innerText = "Terhubung";
+                    document.getElementById('authDot').classList.replace('bg-yellow-400', 'bg-green-400');
+                    document.getElementById('authDot').classList.remove('animate-pulse');
+                }
+            } catch (error) { console.error("Error fetching data:", error); }
+        }
+
+        window.applyFilters = () => {
+            const keyword = document.getElementById('searchInput').value.toLowerCase();
+            const kec = document.getElementById('filterKecamatan').value;
+            dataLampuFiltered = dataLampuRaw.filter(item => {
+                const matchKec = (kec === 'ALL') || (item.kecamatan === kec);
+                const valNoUrut = (item.nomorUrut || '').toString().toLowerCase();
+                const valJenis = (item.jenisLampu || '').toString().toLowerCase();
+                const valSN = (item.serialNumber || '').toString().toLowerCase();
+                const matchKey = valNoUrut.includes(keyword) || valJenis.includes(keyword) || valSN.includes(keyword);
+                return matchKec && matchKey;
+            });
+            renderTable();
+            if(document.getElementById('rekap-section').classList.contains('active')) renderMapMarkers();
+        };
+
+        window.previewImage = (inputElement, imgId) => {
+            const file = inputElement.files[0];
+            const preview = document.getElementById(imgId);
+            const iconId = imgId.replace('preview', 'icon');
+            const icon = document.getElementById(iconId);
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) { preview.src = e.target.result; preview.classList.remove('hidden'); icon.classList.add('hidden'); }
+                reader.readAsDataURL(file);
+            } else { preview.src = ''; preview.classList.add('hidden'); icon.classList.remove('hidden'); }
+        };
+
+        document.getElementById('lampForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const lat = document.getElementById('latitude').value; const lng = document.getElementById('longitude').value;
+            if(!lat || !lng) { showAlert("Peringatan", "Titik koordinat harus diisi.", true); return; }
+
+            const fileSeb = document.getElementById('fotoSebelum').files[0];
+            const filePro = document.getElementById('fotoProses').files[0];
+            const fileSel = document.getElementById('fotoSelesai').files[0];
+            const fileBaru = document.getElementById('fotoBaru').files[0]; 
+            const fileLama = document.getElementById('fotoLama').files[0]; 
+            if (!fileSeb || !filePro || !fileSel || !fileBaru || !fileLama) { showAlert("Peringatan", "Kelima foto wajib diambil/dipilih.", true); return; }
+
+            document.getElementById('formLoading').classList.remove('hidden');
+
+            try {
+                const base64Seb = await getBase64(fileSeb);
+                const base64Pro = await getBase64(filePro);
+                const base64Sel = await getBase64(fileSel);
+                const base64Baru = await getBase64(fileBaru);
+                const base64Lama = await getBase64(fileLama);
+
+                let snValue = document.getElementById('serialNumber').value.trim();
+                if (snValue.toUpperCase().startsWith('SN-')) snValue = snValue.substring(3);
+                const finalSerialNumber = "SN-" + snValue;
+
+                const payload = {
+                    action: "insert", nomorUrut: document.getElementById('nomorUrut').value, jenisLampu: document.getElementById('jenisLampu').value,
+                    serialNumber: finalSerialNumber, kecamatan: document.getElementById('kecamatan').value, lat: parseFloat(lat), lng: parseFloat(lng),
+                    linkMaps: document.getElementById('linkMaps').value,
+                    fotoSeb: base64Seb, fotoPro: base64Pro, fotoSel: base64Sel, fotoBaru: base64Baru, fotoLama: base64Lama, 
+                    keterangan: document.getElementById('keterangan').value
+                };
+
+                const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    showAlert("Sukses", "Data berhasil disimpan ke Spreadsheet."); resetForm(); fetchData(); switchTab('rekap');
+                } else showAlert("Error", "Gagal menyimpan: " + result.message, true);
+            } catch (error) { showAlert("Error", "Gagal mengirim data: " + error.message, true); } 
+            finally { document.getElementById('formLoading').classList.add('hidden'); }
+        });
+
+        window.resetForm = () => {
+            document.getElementById('lampForm').reset();
+            document.getElementById('latitude').value = ''; document.getElementById('longitude').value = ''; document.getElementById('linkMaps').value = '';
+            ['Seb', 'Pro', 'Sel', 'Baru', 'Lama'].forEach(suffix => {
+                document.getElementById(`preview${suffix}`).classList.add('hidden');
+                document.getElementById(`icon${suffix}`).classList.remove('hidden');
+                document.getElementById(`preview${suffix}`).src = '';
+            });
+            if(markerPicker) { mapPicker.removeLayer(markerPicker); markerPicker = null; }
+            lockMap('mapPicker'); if(mapPicker) mapPicker.setView(KARIMUN_CENTER, ZOOM_LEVEL_KAB);
+        };
+
+        window.hapusData = () => showAlert("Informasi", "Hapus baris secara manual di Spreadsheet Anda.", false);
+
+        function parseImageUrl(url) {
+            if (!url) return '';
+            if (url.startsWith('data:image') || url.match(/\.(jpeg|jpg|gif|png|webp)$/i)) return url;
+            const driveMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+            if (driveMatch && driveMatch[1]) return `https://lh3.googleusercontent.com/d/${driveMatch[1]}`;
+            return url;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            document.getElementById('totalDataCount').innerText = `Total: ${dataLampuFiltered.length} Lampu`;
+            if (dataLampuFiltered.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-10 text-center text-gray-500 italic">Data kosong.</td></tr>'; return; }
+
+            tbody.innerHTML = '';
+            dataLampuFiltered.forEach((item) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-blue-50 transition";
+                
+                const clean = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+                const getVal = (possibleKeys) => { 
+                    const cleanKeys = possibleKeys.map(clean);
+                    for(let k of Object.keys(item)) {
+                        if(item[k] && cleanKeys.includes(clean(k))) return item[k];
+                    }
+                    return ''; 
+                };
+                
+                const urlSeb = parseImageUrl(getVal(['fotoSebelum', 'Foto Sebelum', 'Sebelum']));
+                const urlPro = parseImageUrl(getVal(['fotoProses', 'Foto Proses', 'Pengerjaan', 'Proses']));
+                const urlSel = parseImageUrl(getVal(['fotoSelesai', 'Foto Selesai', 'Selesai']));
+                const urlBaru = parseImageUrl(getVal(['fotoBaru', 'Foto Lampu Baru', 'Lampu Baru', 'Foto Seri', 'Seri Lampu'])); 
+                const urlLama = parseImageUrl(getVal(['fotoLama', 'Foto Lampu Lama', 'Lampu Lama'])); 
+                const ketVal = getVal(['keterangan', 'Keterangan']);
+
+                const dtFoto = encodeURIComponent(JSON.stringify({
+                    seb: urlSeb, pro: urlPro, sel: urlSel, baru: urlBaru, lama: urlLama, 
+                    ket: ketVal || 'Tidak ada keterangan.', title: `No Urut: ${item.nomorUrut || '-'} | SN: ${item.serialNumber || '-'}`
+                }));
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${item.nomorUrut || '-'}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm"><span class="px-2.5 py-1 rounded bg-indigo-100 text-indigo-800 font-bold">${item.kecamatan || '-'}</span></td>
+                    <td class="px-6 py-4 text-sm font-bold">${item.jenisLampu || '-'}<br><span class="font-mono text-blue-600 font-normal">SN: ${item.serialNumber || '-'}</span></td>
+                    <td class="px-6 py-4 text-sm"><div class="text-xs font-mono bg-gray-100 px-2 py-1 rounded inline-block">${item.lat ? parseFloat(item.lat).toFixed(5) : '-'}, ${item.lng ? parseFloat(item.lng).toFixed(5) : '-'}</div><br><a href="${item.linkMaps || '#'}" target="_blank" class="text-blue-600 hover:underline text-xs"><i class="fa-solid fa-map-location-dot"></i> Buka Maps</a></td>
+                    <td class="px-6 py-4 text-sm min-w-[150px]">${ketVal || '-'}</td>
+                    <td class="px-6 py-4 text-center text-sm font-medium col-foto">
+                        <button onclick="bukaFotoModal('${dtFoto}')" class="btn-lihat text-white bg-blue-600 px-3 py-1.5 rounded w-full"><i class="fa-regular fa-image"></i> Lihat</button>
+                        <div class="print-photos mt-2">
+                            ${urlSeb ? `<img src="${urlSeb}">` : ''}
+                            ${urlPro ? `<img src="${urlPro}">` : ''}
+                            ${urlSel ? `<img src="${urlSel}">` : ''}
+                            ${urlBaru ? `<img src="${urlBaru}">` : ''}
+                            ${urlLama ? `<img src="${urlLama}">` : ''}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-right col-aksi"><button onclick="hapusData()" class="text-gray-500 hover:text-blue-600 bg-gray-50 px-2.5 py-1.5 border rounded"><i class="fa-solid fa-circle-info"></i></button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderMapMarkers() {
+            if(!mainMap) return;
+            mainMapMarkers.forEach(marker => mainMap.removeLayer(marker)); mainMapMarkers = [];
+            const bulbIcon = L.divIcon({ html: '<div style="background-color: #ef4444; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white;"><i class="fa-solid fa-lightbulb text-sm"></i></div>', className: 'custom-leaflet-icon', iconSize: [32, 32], iconAnchor: [16, 16] });
+            const bounds = L.latLngBounds(); let hasPoints = false;
+            dataLampuFiltered.forEach(item => {
+                if(item.lat && item.lng) {
+                    const marker = L.marker([parseFloat(item.lat), parseFloat(item.lng)], {icon: bulbIcon}).addTo(mainMap);
+                    marker.bindPopup(`<div class="text-sm font-bold mb-1">${item.jenisLampu || '-'}</div><div class="text-xs text-gray-600">SN: ${item.serialNumber || '-'}</div>`);
+                    mainMapMarkers.push(marker); bounds.extend([parseFloat(item.lat), parseFloat(item.lng)]); hasPoints = true;
+                }
+            });
+            document.getElementById('mapPointCount').innerText = `${hasPoints ? dataLampuFiltered.length : 0} Titik`;
+            if (hasPoints) mainMap.fitBounds(bounds, { padding: [40, 40] });
+        }
+
+        window.bukaFotoModal = (dataStr) => {
+            const data = JSON.parse(decodeURIComponent(dataStr));
+            document.getElementById('photoModalTitle').innerHTML = `<i class="fa-solid fa-images mr-2 text-blue-600"></i>${data.title}`;
+            
+            // Beri Fallback URL jika Data Gambar kosong dari Spreadsheet (Biasanya terjadi untuk data yang sudah direkap lama)
+            const fallback = 'https://placehold.co/400x300/e2e8f0/64748b?text=Data+Lama+(Kosong)';
+            
+            document.getElementById('imgSeb').src = data.seb || fallback; 
+            document.getElementById('imgPro').src = data.pro || fallback; 
+            document.getElementById('imgSel').src = data.sel || fallback;
+            document.getElementById('imgBaru').src = data.baru || fallback;
+            document.getElementById('imgLama').src = data.lama || fallback;
+            
+            document.getElementById('ketModal').innerText = data.ket;
+            document.getElementById('photoModal').classList.remove('hidden'); document.getElementById('photoModal').classList.add('flex');
+        };
+        
+        window.closePhotoModal = () => { document.getElementById('photoModal').classList.add('hidden'); document.getElementById('photoModal').classList.remove('flex'); };
+        window.openPrintModal = () => { document.getElementById('printModal').classList.remove('hidden'); document.getElementById('printModal').classList.add('flex'); };
+        window.closePrintModal = () => { document.getElementById('printModal').classList.add('hidden'); document.getElementById('printModal').classList.remove('flex'); };
+
+        window.executePrint = () => {
+            const withMap = document.getElementById('printOptMap').checked; const withTable = document.getElementById('printOptTable').checked; const withFoto = document.getElementById('printOptFoto').checked;
+            if(!withMap && !withTable) { showAlert('Peringatan', 'Pilih Peta atau Tabel.', true); return; }
+            closePrintModal();
+            const body = document.body;
+            body.classList.remove('print-map-hidden', 'print-table-hidden', 'print-map-active', 'print-table-no-foto', 'print-table-with-foto');
+            if(!withMap) body.classList.add('print-map-hidden'); if(withMap) body.classList.add('print-map-active');
+            if(!withTable) body.classList.add('print-table-hidden');
+            if(withFoto && withTable) body.classList.add('print-table-with-foto'); else body.classList.add('print-table-no-foto');
+            document.getElementById('printDate').innerText = 'Dicetak pada: ' + new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            unlockMap('mainMap');
+            setTimeout(() => { if(withMap && mainMap) mainMap.invalidateSize(); window.print(); setTimeout(() => lockMap('mainMap'), 500); }, 500);
+        };
+
+        window.onload = () => { initMaps(); fetchData(); };
+    </script>
+</body>
+</html>
