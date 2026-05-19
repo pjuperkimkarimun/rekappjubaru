@@ -38,20 +38,33 @@
             .col-aksi { display: none !important; }
             
             body.print-table-no-foto .col-foto { display: none !important; }
-            body.print-tauble-with-foto .col-foto { display: table-cell !important; width: 48%; } 
+            body.print-table-with-foto .col-foto { display: table-cell !important; width: 50%; } 
             body.print-table-with-foto .btn-lihat { display: none !important; }
             
-            /* Paksa 5 foto menjadi 1 baris (nowrap) dan jarak dirapikan */
+            /* Susunan foto berjejer */
             body.print-table-with-foto .print-photos { display: flex !important; justify-content: center; gap: 4px; flex-wrap: nowrap !important; padding: 5px 0; }
             
-            /* Ukuran foto disesuaikan agar 5 gambar muat sejajar */
+            /* Wrapper untuk menggabungkan foto dan teks */
+            .photo-wrapper { display: flex !important; flex-direction: column !important; align-items: center !important; width: 75px !important; }
+            
+            /* Ukuran foto disesuaikan agar muat dengan teks */
             body.print-table-with-foto .print-photos img { 
-                width: 80px !important; 
-                height: 80px !important; 
+                width: 75px !important; 
+                height: 75px !important; 
                 object-fit: contain !important; 
                 background-color: #f8fafc !important; 
                 border: 1px solid #cbd5e1 !important;
                 border-radius: 4px !important;
+            }
+            
+            /* Label Teks di bawah foto cetak */
+            .photo-label {
+                font-size: 8px !important;
+                font-weight: 700 !important;
+                color: #374151 !important;
+                text-align: center !important;
+                margin-top: 3px !important;
+                line-height: 1.1 !important;
             }
             
             table { width: 100% !important; border-collapse: collapse !important; font-size: 11px !important; }
@@ -182,7 +195,6 @@
                             <input type="url" id="linkMaps" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border bg-gray-50 text-blue-600 underline" placeholder="Link Google Maps (Otomatis Dibuat)" readonly>
                         </div>
 
-                        <!-- KOLOM UPLOAD FOTO 5 BUAH -->
                         <div class="md:col-span-2 bg-blue-50/50 p-4 rounded-md border-2 border-dashed border-blue-200">
                             <h3 class="text-sm font-bold text-gray-800 mb-2"><i class="fa-solid fa-camera mr-2 text-blue-600"></i>Dokumentasi Pemasangan</h3>
                             <p class="text-xs text-gray-500 mb-4 bg-white inline-block px-2 py-1 rounded shadow-sm"><i class="fa-solid fa-info-circle mr-1"></i> Klik "Choose File" untuk memotret atau memilih foto dari Galeri.</p>
@@ -326,7 +338,6 @@
         </section>
     </main>
 
-    <!-- Modal Cetak -->
     <div id="printModal" class="fixed inset-0 bg-gray-900/50 z-50 hidden items-center justify-center backdrop-blur-sm">
         <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
             <h3 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2"><i class="fa-solid fa-print text-blue-600 mr-2"></i>Pengaturan Cetak Laporan</h3>
@@ -341,7 +352,7 @@
                     <div class="ml-3"><span class="block font-medium text-gray-900">Sertakan Tabel Rekapitulasi</span></div>
                 </label>
                 <label class="flex items-center p-3 border rounded cursor-pointer hover:bg-gray-50 transition">
-                    <input type="checkbox" id="printOptFoto" class="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                    <input type="checkbox" id="printOptFoto" checked class="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
                     <div class="ml-3"><span class="block font-medium text-gray-900">Sertakan Foto Dokumentasi</span></div>
                 </label>
             </div>
@@ -354,7 +365,6 @@
         </div>
     </div>
 
-    <!-- Alert Modal -->
     <div id="customAlert" class="fixed inset-0 bg-gray-900/50 z-[60] items-center justify-center backdrop-blur-sm">
         <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4">
             <div class="text-center mb-4">
@@ -366,9 +376,8 @@
         </div>
     </div>
 
-    <!-- MODAL LIHAT 5 FOTO -->
     <div id="photoModal" class="fixed inset-0 bg-black/90 z-[70] hidden items-center justify-center p-4 backdrop-blur-md">
-        <button onclick="closePhotoModal()" class="absolute top-4 right-4 text-white hover:text-red-400 transition text-4xl w-10 h-10 flex justify-center items-center rounded-full bg-black/50 hover:bg-black/80">&times;</button>
+        <button onclick="closePhotoModal()" class="absolute top-4 right-4 text-white hover:text-red-400 transition text-4xl w-10 h-10 flex justify-center items-center rounded-full bg-black/50 hover:bg-black/80">×</button>
         <div class="bg-white rounded-xl max-w-7xl w-full p-5 overflow-y-auto max-h-[90vh] shadow-2xl">
             <h3 class="text-xl font-bold mb-4 text-center border-b pb-3 text-gray-800" id="photoModalTitle"><i class="fa-solid fa-images mr-2 text-blue-600"></i>Dokumentasi Pemasangan</h3>
             
@@ -455,11 +464,11 @@
 
         function initMaps() {
             mapPicker = L.map('mapPicker', { scrollWheelZoom: false, dragging: false, touchZoom: false, doubleClickZoom: false }).setView(KARIMUN_CENTER, ZOOM_LEVEL_KAB);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(mapPicker);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapPicker);
             mapPicker.on('click', function(e) { updateLocationInput(e.latlng.lat, e.latlng.lng); });
 
             mainMap = L.map('mainMap', { scrollWheelZoom: false, dragging: false, touchZoom: false, doubleClickZoom: false }).setView(KARIMUN_CENTER, ZOOM_LEVEL_KAB);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(mainMap);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mainMap);
         }
 
         window.unlockMap = (mapId) => {
@@ -665,13 +674,39 @@
                     <td class="px-6 py-4 text-sm"><div class="text-xs font-mono bg-gray-100 px-2 py-1 rounded inline-block">${item.lat ? parseFloat(item.lat).toFixed(5) : '-'}, ${item.lng ? parseFloat(item.lng).toFixed(5) : '-'}</div><br><a href="${item.linkMaps || '#'}" target="_blank" class="text-blue-600 hover:underline text-xs"><i class="fa-solid fa-map-location-dot"></i> Buka Maps</a></td>
                     <td class="px-6 py-4 text-sm min-w-[150px]">${ketVal || '-'}</td>
                     <td class="px-6 py-4 text-center text-sm font-medium col-foto">
-                        <button onclick="bukaFotoModal('${dtFoto}')" class="btn-lihat text-white bg-blue-600 px-3 py-1.5 rounded w-full"><i class="fa-regular fa-image"></i> Lihat</button>
-                        <div class="print-photos mt-2">
-                            ${urlSeb ? `<img src="${urlSeb}">` : ''}
-                            ${urlPro ? `<img src="${urlPro}">` : ''}
-                            ${urlSel ? `<img src="${urlSel}">` : ''}
-                            ${urlBaru ? `<img src="${urlBaru}">` : ''}
-                            ${urlLama ? `<img src="${urlLama}">` : ''}
+                        <button onclick="bukaFotoModal('${dtFoto}')" class="btn-lihat text-white bg-blue-600 px-3 py-1.5 rounded w-full mb-2"><i class="fa-regular fa-image"></i> Lihat</button>
+                        
+                        <div class="print-photos">
+                            ${urlSeb ? `
+                                <div class="photo-wrapper">
+                                    <img src="${urlSeb}" onerror="this.parentElement.style.display='none'">
+                                    <span class="photo-label">Sebelum</span>
+                                </div>
+                            ` : ''}
+                            ${urlPro ? `
+                                <div class="photo-wrapper">
+                                    <img src="${urlPro}" onerror="this.parentElement.style.display='none'">
+                                    <span class="photo-label">Pengerjaan</span>
+                                </div>
+                            ` : ''}
+                            ${urlSel ? `
+                                <div class="photo-wrapper">
+                                    <img src="${urlSel}" onerror="this.parentElement.style.display='none'">
+                                    <span class="photo-label">Selesai</span>
+                                </div>
+                            ` : ''}
+                            ${urlBaru ? `
+                                <div class="photo-wrapper">
+                                    <img src="${urlBaru}" onerror="this.parentElement.style.display='none'">
+                                    <span class="photo-label">Lampu Baru</span>
+                                </div>
+                            ` : ''}
+                            ${urlLama ? `
+                                <div class="photo-wrapper">
+                                    <img src="${urlLama}" onerror="this.parentElement.style.display='none'">
+                                    <span class="photo-label">Lampu Lama</span>
+                                </div>
+                            ` : ''}
                         </div>
                     </td>
                     <td class="px-6 py-4 text-right col-aksi"><button onclick="hapusData()" class="text-gray-500 hover:text-blue-600 bg-gray-50 px-2.5 py-1.5 border rounded"><i class="fa-solid fa-circle-info"></i></button></td>
@@ -700,7 +735,6 @@
             const data = JSON.parse(decodeURIComponent(dataStr));
             document.getElementById('photoModalTitle').innerHTML = `<i class="fa-solid fa-images mr-2 text-blue-600"></i>${data.title}`;
             
-            // Beri Fallback URL jika Data Gambar kosong dari Spreadsheet (Biasanya terjadi untuk data yang sudah direkap lama)
             const fallback = 'https://placehold.co/400x300/e2e8f0/64748b?text=Data+Lama+(Kosong)';
             
             document.getElementById('imgSeb').src = data.seb || fallback; 
