@@ -21,10 +21,11 @@
         #customAlert.active { display: flex; }
         
         /* CSS Khusus untuk Fitur Cetak (Print) */
-        .print-photos { display: none; }
+        #printArea { display: none; }
+        
         @media print {
-            /* Kertas Landscape untuk memaksimalkan ruang */
-            @page { size: landscape; margin: 1cm; }
+            /* Hapus landscape agar laporan foto bisa Portrait memanjang ke bawah dengan rapi */
+            @page { margin: 1cm; }
             body { background-color: white; color: black; }
             .no-print { display: none !important; }
             .print-only { display: block !important; }
@@ -36,68 +37,73 @@
             .bg-white { background: transparent !important; border: none !important; }
             .col-aksi { display: none !important; }
             
-            /* --- PENGATURAN 1 PEKERJAAN = 1 HALAMAN --- */
-            
-            /* Paksa setiap baris data (TR) untuk ganti halaman setelahnya */
-            #tableBody tr { 
-                page-break-after: always !important; 
-                page-break-inside: avoid !important;
-            }
-            /* Cegah halaman kosong berlebih di data paling terakhir */
-            #tableBody tr:last-child {
-                page-break-after: auto !important; 
-            }
+            /* Sembunyikan kolom foto di tabel rekap utama karena foto dibuat di halaman terpisah */
+            .col-foto, td:nth-child(6), th:nth-child(6) { display: none !important; }
 
-            table { width: 100% !important; border-collapse: collapse !important; }
-            th, td { border: 1px solid #ddd !important; padding: 15px !important; vertical-align: middle !important; }
-            th { background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 14px !important; }
+            /* Tabel Rekapitulasi Mode Print */
+            table { width: 100% !important; border-collapse: collapse !important; font-size: 11px !important; }
+            th, td { border: 1px solid #ddd !important; padding: 8px !important; vertical-align: middle !important; }
+            th { background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             
-            body.print-table-no-foto .col-foto { display: none !important; }
-            
-            /* Lebarkan kolom foto agar maksimal memakan ruang kertas */
-            body.print-table-with-foto .col-foto { display: table-cell !important; width: 75% !important; } 
-            body.print-table-with-foto .btn-lihat { display: none !important; }
-            
-            /* Susunan foto dibiarkan wrap (turun ke bawah) agar besar */
-            body.print-table-with-foto .print-photos { 
-                display: flex !important; 
-                justify-content: center !important; 
-                gap: 15px !important; 
-                flex-wrap: wrap !important; 
-                padding: 10px !important; 
-            }
-            
-            .photo-wrapper { display: flex !important; flex-direction: column !important; align-items: center !important; }
-            
-            /* FOTO DIPERBESAR DRASTIS MEMENUHI KERTAS */
-            body.print-table-with-foto .print-photos img { 
-                width: 260px !important; 
-                height: 200px !important; 
-                object-fit: contain !important; 
-                background-color: #f8fafc !important; 
-                border: 2px solid #cbd5e1 !important;
-                border-radius: 6px !important;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-            }
-            
-            /* Label Teks di bawah foto ikut diperbesar */
-            .photo-label {
-                font-size: 14px !important;
-                font-weight: 800 !important;
-                color: #1f2937 !important;
-                text-align: center !important;
-                margin-top: 6px !important;
-            }
-            
-            /* Perbesar teks lainnya agar proporsional di kertas besar */
-            td .text-sm { font-size: 14px !important; line-height: 1.5 !important; }
-            td .text-xs { font-size: 12px !important; }
-            
-            .print-map-active #mainMap { height: 600px !important; width: 100% !important; border: 2px solid #000 !important; page-break-after: always; }
+            .print-map-active #mainMap { height: 500px !important; width: 100% !important; border: 2px solid #000 !important; page-break-after: always; }
             .print-map-hidden #mainMap-container { display: none !important; }
             .print-table-hidden #table-container { display: none !important; }
             
             #printHeader { display: block !important; text-align: center; margin-bottom: 20px; }
+            
+            /* ---- GAYA KHUSUS LAPORAN 1 PEKERJAAN 1 HALAMAN (PHOTO REPORT) ---- */
+            body.print-foto-active #printArea { display: block !important; }
+            
+            .laporan-page { 
+                page-break-after: always; 
+                padding: 10px; 
+                font-family: 'Helvetica', 'Arial', sans-serif; 
+                box-sizing: border-box;
+            }
+            .laporan-header { text-align: center; margin-bottom: 8px; }
+            .laporan-header h1 { font-size: 22px; font-weight: 900; margin: 0 0 5px 0; letter-spacing: 1px; }
+            .laporan-header p { font-size: 13px; margin: 0; color: #374151; }
+            .laporan-divider { border-bottom: 4px solid black; margin-bottom: 15px; }
+            
+            .laporan-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 12px; }
+            .laporan-table td { border: 1px solid black !important; padding: 8px 12px !important; }
+            .laporan-table .col-label { font-weight: bold; width: 25%; background-color: #f9fafb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            
+            .laporan-section-title { 
+                background-color: #1a1a1a !important; 
+                color: white !important; 
+                font-weight: bold; 
+                text-align: center; 
+                padding: 8px; 
+                font-size: 13px; 
+                margin-bottom: 15px; 
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact; 
+            }
+            
+            /* Grid 2 Kolom untuk foto atas */
+            .laporan-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+            .laporan-img-box { text-align: center; }
+            .laporan-img-box p { font-weight: 800; font-size: 12px; margin-bottom: 6px; color: #000; }
+            .laporan-img-box img { 
+                width: 100%; 
+                height: 250px; /* Ukuran gambar diperbesar proporsional */
+                object-fit: contain; 
+                border: 1px solid #d1d5db; 
+                border-radius: 8px; 
+                padding: 4px; 
+            }
+            
+            /* Kotak Foto Tengah (Material Baru) */
+            .laporan-img-box-center { text-align: center; width: 50%; margin: 0 auto; }
+            .laporan-img-box-center img { 
+                width: 100%; 
+                height: 250px; 
+                object-fit: contain; 
+                border: 1px solid #d1d5db; 
+                border-radius: 8px; 
+                padding: 4px; 
+            }
         }
     </style>
 </head>
@@ -131,8 +137,9 @@
         </div>
     </div>
 
+    <!-- Header Laporan Rekapitulasi (Jika hanya cetak tabel) -->
     <div id="printHeader" class="hidden text-center py-4 mb-4 border-b-2 border-black">
-        <h1 class="text-2xl font-bold uppercase">Laporan Pemasangan Lampu Baru</h1>
+        <h1 class="text-2xl font-bold uppercase">Tabel Rekapitulasi Pekerjaan PJU</h1>
         <h2 class="text-lg font-semibold uppercase">Program "Karimunku Terang"</h2>
         <p class="text-sm text-gray-600" id="printDate"></p>
     </div>
@@ -354,6 +361,10 @@
                     </table>
                 </div>
             </div>
+            
+            <!-- Tempat Laporan Foto 1 Halaman / Pekerjaan Akan Dihasilkan oleh Javascript -->
+            <div id="printArea" class="print-only"></div>
+
         </section>
     </main>
 
@@ -373,7 +384,10 @@
                 </label>
                 <label class="flex items-center p-3 border rounded cursor-pointer hover:bg-gray-50 transition">
                     <input type="checkbox" id="printOptFoto" checked class="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
-                    <div class="ml-3"><span class="block font-medium text-gray-900">Sertakan Foto Dokumentasi</span></div>
+                    <div class="ml-3">
+                        <span class="block font-medium text-gray-900">Cetak Format Laporan Detail</span>
+                        <span class="block text-xs text-gray-500">Mencetak format 1 pekerjaan 1 halaman penuh beserta 5 foto besar.</span>
+                    </div>
                 </label>
             </div>
             <div class="flex justify-end space-x-3">
@@ -546,6 +560,7 @@
                         };
                         return {
                             ...item,
+                            timestamp: getV(['timestamp', 'Timestamp', 'waktu']),
                             nomorUrut: getV(['nomorUrut', 'No Urut']),
                             kecamatan: getV(['kecamatan', 'Kecamatan']),
                             jenisLampu: getV(['jenisLampu', 'Jenis Lampu']),
@@ -696,41 +711,7 @@
                     <td class="px-6 py-4 text-sm"><div class="text-xs font-mono bg-gray-100 px-2 py-1 rounded inline-block">${item.lat ? parseFloat(item.lat).toFixed(5) : '-'}, ${item.lng ? parseFloat(item.lng).toFixed(5) : '-'}</div><br><a href="${item.linkMaps || '#'}" target="_blank" class="text-blue-600 hover:underline text-xs"><i class="fa-solid fa-map-location-dot"></i> Buka Maps</a></td>
                     <td class="px-6 py-4 text-sm min-w-[150px]">${ketVal || '-'}</td>
                     <td class="px-6 py-4 text-center text-sm font-medium col-foto">
-                        <button onclick="bukaFotoModal('${dtFoto}')" class="btn-lihat text-white bg-blue-600 px-3 py-1.5 rounded w-full mb-2"><i class="fa-regular fa-image"></i> Lihat</button>
-                        
-                        <!-- WADAH FOTO UNTUK MODE CETAK (PRINT) DENGAN LABEL -->
-                        <div class="print-photos">
-                            ${urlSeb ? `
-                                <div class="photo-wrapper">
-                                    <img src="${urlSeb}" onerror="this.parentElement.style.display='none'">
-                                    <span class="photo-label">Sebelum</span>
-                                </div>
-                            ` : ''}
-                            ${urlPro ? `
-                                <div class="photo-wrapper">
-                                    <img src="${urlPro}" onerror="this.parentElement.style.display='none'">
-                                    <span class="photo-label">Pengerjaan</span>
-                                </div>
-                            ` : ''}
-                            ${urlSel ? `
-                                <div class="photo-wrapper">
-                                    <img src="${urlSel}" onerror="this.parentElement.style.display='none'">
-                                    <span class="photo-label">Selesai</span>
-                                </div>
-                            ` : ''}
-                            ${urlBaru ? `
-                                <div class="photo-wrapper">
-                                    <img src="${urlBaru}" onerror="this.parentElement.style.display='none'">
-                                    <span class="photo-label">Lampu Baru</span>
-                                </div>
-                            ` : ''}
-                            ${urlLama ? `
-                                <div class="photo-wrapper">
-                                    <img src="${urlLama}" onerror="this.parentElement.style.display='none'">
-                                    <span class="photo-label">Lampu Lama</span>
-                                </div>
-                            ` : ''}
-                        </div>
+                        <button onclick="bukaFotoModal('${dtFoto}')" class="btn-lihat text-white bg-blue-600 px-3 py-1.5 rounded w-full"><i class="fa-regular fa-image"></i> Lihat</button>
                     </td>
                     <td class="px-6 py-4 text-right col-aksi"><button onclick="hapusData()" class="text-gray-500 hover:text-blue-600 bg-gray-50 px-2.5 py-1.5 border rounded"><i class="fa-solid fa-circle-info"></i></button></td>
                 `;
@@ -776,14 +757,113 @@
 
         window.executePrint = () => {
             const withMap = document.getElementById('printOptMap').checked; const withTable = document.getElementById('printOptTable').checked; const withFoto = document.getElementById('printOptFoto').checked;
-            if(!withMap && !withTable) { showAlert('Peringatan', 'Pilih Peta atau Tabel.', true); return; }
+            if(!withMap && !withTable && !withFoto) { showAlert('Peringatan', 'Pilih minimal satu opsi cetak.', true); return; }
             closePrintModal();
             const body = document.body;
-            body.classList.remove('print-map-hidden', 'print-table-hidden', 'print-map-active', 'print-table-no-foto', 'print-table-with-foto');
-            if(!withMap) body.classList.add('print-map-hidden'); if(withMap) body.classList.add('print-map-active');
-            if(!withTable) body.classList.add('print-table-hidden');
-            if(withFoto && withTable) body.classList.add('print-table-with-foto'); else body.classList.add('print-table-no-foto');
+            body.className = body.className.replace(/print-(map|table|foto)-[a-z-]+/g, '').trim();
+            
+            if(!withMap) body.classList.add('print-map-hidden'); else body.classList.add('print-map-active');
+            if(!withTable) body.classList.add('print-table-hidden'); else body.classList.add('print-table-active');
+            
             document.getElementById('printDate').innerText = 'Dicetak pada: ' + new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            
+            const printArea = document.getElementById('printArea');
+            printArea.innerHTML = '';
+            
+            if (withFoto) {
+                body.classList.add('print-foto-active');
+                let reportsHTML = '';
+                const fallbackImg = 'https://placehold.co/400x300/e2e8f0/64748b?text=Tidak+Ada+Foto';
+                
+                dataLampuFiltered.forEach((item) => {
+                    const clean = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    const getVal = (possibleKeys) => { 
+                        const cleanKeys = possibleKeys.map(clean);
+                        for(let k of Object.keys(item)) {
+                            if(item[k] && cleanKeys.includes(clean(k))) return item[k];
+                        }
+                        return ''; 
+                    };
+                    
+                    const urlSeb = parseImageUrl(getVal(['fotoSebelum', 'Foto Sebelum', 'Sebelum'])) || fallbackImg;
+                    const urlPro = parseImageUrl(getVal(['fotoProses', 'Foto Proses', 'Pengerjaan', 'Proses'])) || fallbackImg;
+                    const urlSel = parseImageUrl(getVal(['fotoSelesai', 'Foto Selesai', 'Selesai'])) || fallbackImg;
+                    const urlBaru = parseImageUrl(getVal(['fotoBaru', 'Foto Lampu Baru', 'Lampu Baru', 'Foto Seri', 'Seri Lampu'])) || fallbackImg;
+                    const urlLama = parseImageUrl(getVal(['fotoLama', 'Foto Lampu Lama', 'Lampu Lama'])) || fallbackImg;
+                    
+                    let fmtWaktu = '-';
+                    if (item.timestamp) {
+                        try { fmtWaktu = new Date(item.timestamp).toLocaleString('id-ID'); }
+                        catch(e) { fmtWaktu = item.timestamp; }
+                    }
+
+                    const lat = item.lat ? parseFloat(item.lat).toFixed(5) : '-';
+                    const lng = item.lng ? parseFloat(item.lng).toFixed(5) : '-';
+                    
+                    reportsHTML += `
+                        <div class="laporan-page">
+                            <div class="laporan-header">
+                                <h1>LAPORAN PEKERJAAN PJU</h1>
+                                <p>Sistem Informasi Pemeliharaan</p>
+                            </div>
+                            <div class="laporan-divider"></div>
+
+                            <table class="laporan-table">
+                                <tbody>
+                                    <tr>
+                                        <td class="col-label">ID Tiang / Lokasi</td>
+                                        <td>${item.serialNumber || '-'} - ${item.keterangan || ''} [Kec. ${item.kecamatan || '-'}]</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="col-label">Waktu Pekerjaan</td>
+                                        <td>${fmtWaktu}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="col-label">Koordinat</td>
+                                        <td class="text-blue-600 font-mono">${lat}, ${lng}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="col-label">Material Diganti</td>
+                                        <td class="text-blue-600 font-bold">${item.jenisLampu || '-'}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="col-label">Catatan Teknis</td>
+                                        <td>${item.keterangan || '-'}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div class="laporan-section-title">DOKUMENTASI VISUAL</div>
+
+                            <div class="laporan-grid">
+                                <div class="laporan-img-box">
+                                    <p>1. Kondisi Sebelum</p>
+                                    <img src="${urlSeb}" onerror="this.src='${fallbackImg}'">
+                                </div>
+                                <div class="laporan-img-box">
+                                    <p>2. Sedang Dikerjakan</p>
+                                    <img src="${urlPro}" onerror="this.src='${fallbackImg}'">
+                                </div>
+                                <div class="laporan-img-box">
+                                    <p>3. Kondisi Selesai (Menyala)</p>
+                                    <img src="${urlSel}" onerror="this.src='${fallbackImg}'">
+                                </div>
+                                <div class="laporan-img-box">
+                                    <p>4. Barang Bekas/Rusak</p>
+                                    <img src="${urlLama}" onerror="this.src='${fallbackImg}'">
+                                </div>
+                            </div>
+                            
+                            <div class="laporan-img-box-center">
+                                <p style="font-weight: 800; font-size: 12px; margin-bottom: 6px; color: #000;">5. Material Baru</p>
+                                <img src="${urlBaru}" onerror="this.src='${fallbackImg}'">
+                            </div>
+                        </div>
+                    `;
+                });
+                printArea.innerHTML = reportsHTML;
+            }
+
             unlockMap('mainMap');
             setTimeout(() => { if(withMap && mainMap) mainMap.invalidateSize(); window.print(); setTimeout(() => lockMap('mainMap'), 500); }, 500);
         };
