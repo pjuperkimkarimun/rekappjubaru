@@ -23,58 +23,77 @@
         /* CSS Khusus untuk Fitur Cetak (Print) */
         .print-photos { display: none; }
         @media print {
+            /* Kertas Landscape untuk memaksimalkan ruang */
             @page { size: landscape; margin: 1cm; }
             body { background-color: white; color: black; }
             .no-print { display: none !important; }
             .print-only { display: block !important; }
             
             nav, .tab-nav, #printModal, #customAlert, #photoModal { display: none !important; }
-            
             main { padding: 0 !important; max-width: 100% !important; margin: 0 !important; }
             .shadow-md { box-shadow: none !important; }
             .rounded-lg { border-radius: 0 !important; }
             .bg-white { background: transparent !important; border: none !important; }
-            
             .col-aksi { display: none !important; }
             
+            /* --- PENGATURAN 1 PEKERJAAN = 1 HALAMAN --- */
+            
+            /* Paksa setiap baris data (TR) untuk ganti halaman setelahnya */
+            #tableBody tr { 
+                page-break-after: always !important; 
+                page-break-inside: avoid !important;
+            }
+            /* Cegah halaman kosong berlebih di data paling terakhir */
+            #tableBody tr:last-child {
+                page-break-after: auto !important; 
+            }
+
+            table { width: 100% !important; border-collapse: collapse !important; }
+            th, td { border: 1px solid #ddd !important; padding: 15px !important; vertical-align: middle !important; }
+            th { background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 14px !important; }
+            
             body.print-table-no-foto .col-foto { display: none !important; }
-            body.print-table-with-foto .col-foto { display: table-cell !important; width: 50%; } 
+            
+            /* Lebarkan kolom foto agar maksimal memakan ruang kertas */
+            body.print-table-with-foto .col-foto { display: table-cell !important; width: 75% !important; } 
             body.print-table-with-foto .btn-lihat { display: none !important; }
             
-            /* Susunan foto berjejer */
-            body.print-table-with-foto .print-photos { display: flex !important; justify-content: center; gap: 4px; flex-wrap: nowrap !important; padding: 5px 0; }
+            /* Susunan foto dibiarkan wrap (turun ke bawah) agar besar */
+            body.print-table-with-foto .print-photos { 
+                display: flex !important; 
+                justify-content: center !important; 
+                gap: 15px !important; 
+                flex-wrap: wrap !important; 
+                padding: 10px !important; 
+            }
             
-            /* Wrapper untuk menggabungkan foto dan teks */
-            .photo-wrapper { display: flex !important; flex-direction: column !important; align-items: center !important; width: 75px !important; }
+            .photo-wrapper { display: flex !important; flex-direction: column !important; align-items: center !important; }
             
-            /* Ukuran foto disesuaikan agar muat dengan teks */
+            /* FOTO DIPERBESAR DRASTIS MEMENUHI KERTAS */
             body.print-table-with-foto .print-photos img { 
-                width: 75px !important; 
-                height: 75px !important; 
+                width: 260px !important; 
+                height: 200px !important; 
                 object-fit: contain !important; 
                 background-color: #f8fafc !important; 
-                border: 1px solid #cbd5e1 !important;
-                border-radius: 4px !important;
+                border: 2px solid #cbd5e1 !important;
+                border-radius: 6px !important;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
             }
             
-            /* Label Teks di bawah foto cetak */
+            /* Label Teks di bawah foto ikut diperbesar */
             .photo-label {
-                font-size: 8px !important;
-                font-weight: 700 !important;
-                color: #374151 !important;
+                font-size: 14px !important;
+                font-weight: 800 !important;
+                color: #1f2937 !important;
                 text-align: center !important;
-                margin-top: 3px !important;
-                line-height: 1.1 !important;
+                margin-top: 6px !important;
             }
             
-            table { width: 100% !important; border-collapse: collapse !important; font-size: 11px !important; }
-            th, td { border: 1px solid #ddd !important; padding: 6px !important; vertical-align: middle !important; }
-            th { background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            /* Perbesar teks lainnya agar proporsional di kertas besar */
+            td .text-sm { font-size: 14px !important; line-height: 1.5 !important; }
+            td .text-xs { font-size: 12px !important; }
             
-            td .text-sm { font-size: 11px !important; line-height: 1.4 !important; }
-            td .text-xs { font-size: 9px !important; }
-            
-            .print-map-active #mainMap { height: 500px !important; width: 100% !important; border: 2px solid #000 !important; page-break-after: always; }
+            .print-map-active #mainMap { height: 600px !important; width: 100% !important; border: 2px solid #000 !important; page-break-after: always; }
             .print-map-hidden #mainMap-container { display: none !important; }
             .print-table-hidden #table-container { display: none !important; }
             
@@ -338,6 +357,7 @@
         </section>
     </main>
 
+    <!-- Modal Cetak -->
     <div id="printModal" class="fixed inset-0 bg-gray-900/50 z-50 hidden items-center justify-center backdrop-blur-sm">
         <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
             <h3 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2"><i class="fa-solid fa-print text-blue-600 mr-2"></i>Pengaturan Cetak Laporan</h3>
@@ -365,6 +385,7 @@
         </div>
     </div>
 
+    <!-- Alert Modal -->
     <div id="customAlert" class="fixed inset-0 bg-gray-900/50 z-[60] items-center justify-center backdrop-blur-sm">
         <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4">
             <div class="text-center mb-4">
@@ -376,6 +397,7 @@
         </div>
     </div>
 
+    <!-- MODAL LIHAT 5 FOTO -->
     <div id="photoModal" class="fixed inset-0 bg-black/90 z-[70] hidden items-center justify-center p-4 backdrop-blur-md">
         <button onclick="closePhotoModal()" class="absolute top-4 right-4 text-white hover:text-red-400 transition text-4xl w-10 h-10 flex justify-center items-center rounded-full bg-black/50 hover:bg-black/80">×</button>
         <div class="bg-white rounded-xl max-w-7xl w-full p-5 overflow-y-auto max-h-[90vh] shadow-2xl">
@@ -422,7 +444,7 @@
     </div>
 
     <script>
-        // === GANTI STRING DI BAWAH INI DENGAN URL WEB APP GOOGLE SCRIPT ANDA YANG BARU DI-DEPLOY ===
+        // === GANTI STRING DI BAWAH INI DENGAN URL WEB APP GOOGLE SCRIPT ANDA ===
         const GAS_URL = "https://script.google.com/macros/s/AKfycbxLGrRmddtVsgw_v5zO1XE0hq_EwgOPcE_mXN0poOtqg5x4_Gm4r-Lkh056bPQ2Y3S5pA/exec";
         
         let dataLampuRaw = []; 
@@ -676,6 +698,7 @@
                     <td class="px-6 py-4 text-center text-sm font-medium col-foto">
                         <button onclick="bukaFotoModal('${dtFoto}')" class="btn-lihat text-white bg-blue-600 px-3 py-1.5 rounded w-full mb-2"><i class="fa-regular fa-image"></i> Lihat</button>
                         
+                        <!-- WADAH FOTO UNTUK MODE CETAK (PRINT) DENGAN LABEL -->
                         <div class="print-photos">
                             ${urlSeb ? `
                                 <div class="photo-wrapper">
