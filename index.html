@@ -55,11 +55,26 @@
             body.print-foto-active #printArea { display: block !important; }
             
             .laporan-page { 
-                page-break-after: always; 
-                padding: 10px; 
+                /* MENCEGAH LAPORAN TERPOTONG DAN MEMAKSA MULAI DI HALAMAN BARU */
+                page-break-before: always !important;
+                break-before: page !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                
+                padding-top: 15px; 
                 font-family: 'Helvetica', 'Arial', sans-serif; 
                 box-sizing: border-box;
+                display: block;
+                width: 100%;
+                clear: both;
             }
+            .laporan-page:last-child {
+                page-break-after: auto !important;
+                break-after: auto !important;
+            }
+            
             .laporan-header { text-align: center; margin-bottom: 8px; }
             .laporan-header h1 { font-size: 22px; font-weight: 900; margin: 0 0 5px 0; letter-spacing: 1px; }
             .laporan-header p { font-size: 13px; margin: 0; color: #374151; }
@@ -82,8 +97,19 @@
             }
             
             /* Grid 2 Kolom untuk foto atas */
-            .laporan-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-            .laporan-img-box { text-align: center; }
+            .laporan-grid { 
+                display: grid; 
+                grid-template-columns: 1fr 1fr; 
+                gap: 15px; 
+                margin-bottom: 15px; 
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+            .laporan-img-box { 
+                text-align: center; 
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
             .laporan-img-box p { font-weight: 800; font-size: 12px; margin-bottom: 6px; color: #000; }
             .laporan-img-box img { 
                 width: 100%; 
@@ -95,7 +121,13 @@
             }
             
             /* Kotak Foto Tengah (Material Baru) */
-            .laporan-img-box-center { text-align: center; width: 50%; margin: 0 auto; }
+            .laporan-img-box-center { 
+                text-align: center; 
+                width: 50%; 
+                margin: 0 auto; 
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
             .laporan-img-box-center img { 
                 width: 100%; 
                 height: 250px; 
