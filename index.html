@@ -232,10 +232,10 @@
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Titik Koordinat Lokasi Pemasangan</label>
                             <div class="flex flex-wrap gap-2 mb-2">
-                                <button type="button" onclick="getLocation()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded text-sm transition flex items-center shadow-sm">
-                                    <i class="fa-solid fa-location-crosshairs text-blue-600 mr-2"></i> Dapatkan Lokasi Saat Ini (GPS)
+                                <button type="button" id="btnGetLoc" onclick="getLocation()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded text-sm transition flex items-center shadow-sm">
+                                    <i class="fa-solid fa-location-crosshairs text-blue-600 mr-2"></i> Dapatkan Lokasi GPS (Akurasi Tinggi)
                                 </button>
-                                <span class="text-xs text-gray-500 self-center">*Atau ketuk peta di bawah untuk menentukan titik manual</span>
+                                <span class="text-xs text-gray-500 self-center">*Atau geser ikon pin di peta untuk menyesuaikan pas di atas tiang</span>
                             </div>
                             <div class="grid grid-cols-2 gap-4 mb-2">
                                 <div><input type="text" id="latitude" required readonly class="bg-gray-100 mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm p-2 border text-gray-600 font-mono" placeholder="Latitude"></div>
@@ -491,7 +491,7 @@
 
     <script>
         // === GANTI STRING DI BAWAH INI DENGAN URL WEB APP GOOGLE SCRIPT ANDA ===
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbxLGrRmddtVsgw_v5zO1XE0hq_EwgOPcE_mXN0poOtqg5x4_Gm4r-Lkh056bPQ2Y3S5pA/exec";
+        const GAS_URL = "MASUKKAN_URL_WEBAPP_SCRIPT_ANDA_DISINI";
         
         let dataLampuRaw = []; 
         let dataLampuFiltered = []; 
@@ -501,7 +501,7 @@
         
         const KARIMUN_CENTER = [0.9997, 103.4283]; 
         const ZOOM_LEVEL_KAB = 10;
-        const ZOOM_LEVEL_DETAIL = 15;
+        const ZOOM_LEVEL_DETAIL = 18; // Akurasi Tinggi saat mendapatkan lokasi
 
         const showAlert = (title, message, isError = false) => {
             document.getElementById('alertTitle').innerText = title;
@@ -550,17 +550,44 @@
         }
 
         function updateLocationInput(lat, lng) {
-            document.getElementById('latitude').value = lat.toFixed(6); document.getElementById('longitude').value = lng.toFixed(6);
+            document.getElementById('latitude').value = lat.toFixed(6); 
+            document.getElementById('longitude').value = lng.toFixed(6);
             document.getElementById('linkMaps').value = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-            if (markerPicker) markerPicker.setLatLng([lat, lng]); else markerPicker = L.marker([lat, lng]).addTo(mapPicker);
+            
+            if (markerPicker) {
+                markerPicker.setLatLng([lat, lng]);
+            } else {
+                // Buat Marker bisa digeser (draggable) agar presisi
+                markerPicker = L.marker([lat, lng], {draggable: true}).addTo(mapPicker);
+                markerPicker.on('dragend', function(event) {
+                    var marker = event.target;
+                    var position = marker.getLatLng();
+                    document.getElementById('latitude').value = position.lat.toFixed(6);
+                    document.getElementById('longitude').value = position.lng.toFixed(6);
+                    document.getElementById('linkMaps').value = `https://www.google.com/maps/search/?api=1&query=${position.lat},${position.lng}`;
+                });
+            }
             mapPicker.setView([lat, lng], ZOOM_LEVEL_DETAIL);
         }
 
         window.getLocation = () => {
             if (navigator.geolocation) {
+                const btnGetLoc = document.getElementById('btnGetLoc');
+                const originalText = btnGetLoc.innerHTML;
+                btnGetLoc.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Mengunci Satelit...';
+                
                 navigator.geolocation.getCurrentPosition(
-                    (position) => { updateLocationInput(position.coords.latitude, position.coords.longitude); unlockMap('mapPicker'); },
-                    (error) => showAlert('Error Lokasi', 'Pastikan GPS aktif dan izin diberikan.', true)
+                    (position) => { 
+                        updateLocationInput(position.coords.latitude, position.coords.longitude); 
+                        unlockMap('mapPicker');
+                        btnGetLoc.innerHTML = originalText;
+                        showAlert('Sukses', `Lokasi didapatkan (Akurasi: ${Math.round(position.coords.accuracy)}m). Geser pin merah jika kurang pas.`, false);
+                    },
+                    (error) => {
+                        btnGetLoc.innerHTML = originalText;
+                        showAlert('Error Lokasi', 'Gagal melacak GPS. Pastikan GPS aktif dengan "Akurasi Tinggi". Atau ketuk peta secara manual.', true);
+                    },
+                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 } // Konfigurasi GPS Akurasi Tinggi
                 );
             } else showAlert('Error', 'Browser tidak mendukung GPS.', true);
         };
@@ -743,7 +770,7 @@
                     <td class="px-6 py-4 text-sm"><div class="text-xs font-mono bg-gray-100 px-2 py-1 rounded inline-block">${item.lat ? parseFloat(item.lat).toFixed(5) : '-'}, ${item.lng ? parseFloat(item.lng).toFixed(5) : '-'}</div><br><a href="${item.linkMaps || '#'}" target="_blank" class="text-blue-600 hover:underline text-xs"><i class="fa-solid fa-map-location-dot"></i> Buka Maps</a></td>
                     <td class="px-6 py-4 text-sm min-w-[150px]">${ketVal || '-'}</td>
                     <td class="px-6 py-4 text-center text-sm font-medium col-foto">
-                        <button onclick="bukaFotoModal('${dtFoto}')" class="btn-lihat text-white bg-blue-600 px-3 py-1.5 rounded w-full"><i class="fa-regular fa-image"></i> Lihat</button>
+                        <button onclick="bukaFotoModal('${dtFoto}')" class="btn-lihat text-white bg-blue-600 px-3 py-1.5 rounded w-full mb-2"><i class="fa-regular fa-image"></i> Lihat</button>
                     </td>
                     <td class="px-6 py-4 text-right col-aksi"><button onclick="hapusData()" class="text-gray-500 hover:text-blue-600 bg-gray-50 px-2.5 py-1.5 border rounded"><i class="fa-solid fa-circle-info"></i></button></td>
                 `;
