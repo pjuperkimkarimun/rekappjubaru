@@ -45,8 +45,17 @@
             th, td { border: 1px solid #ddd !important; padding: 8px !important; vertical-align: middle !important; }
             th { background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             
-            /* Pastikan peta memiliki tinggi yang cukup saat dicetak dan outline jelas */
-            .print-map-active #mainMap { height: 600px !important; width: 100% !important; border: 2px solid #000 !important; page-break-after: always; }
+            /* Pastikan peta memiliki tinggi yang cukup saat dicetak dan tidak terpotong (menghindari split antar halaman) */
+            .print-map-container { 
+                page-break-inside: avoid !important; 
+                break-inside: avoid !important;
+                margin-bottom: 20px !important;
+            }
+            .print-map-active #mainMap { 
+                height: 550px !important; 
+                width: 100% !important; 
+                border: 2px solid #000 !important; 
+            }
             .print-map-hidden #mainMap-container { display: none !important; }
             .print-table-hidden #table-container { display: none !important; }
             
