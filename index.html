@@ -29,7 +29,7 @@
             .no-print { display: none !important; }
             .print-only { display: block !important; }
             
-            nav, .tab-nav, #printModal, #customAlert, #photoModal { display: none !important; }
+            nav, .tab-nav, #printModal, #customAlert, #photoModal, #printLoading { display: none !important; }
             main { padding: 0 !important; max-width: 100% !important; margin: 0 !important; }
             .shadow-md { box-shadow: none !important; }
             .rounded-lg { border-radius: 0 !important; border: none !important; }
@@ -903,13 +903,10 @@
         window.closePrintModal = () => { document.getElementById('printModal').classList.add('hidden'); document.getElementById('printModal').classList.remove('flex'); };
 
         function restoreAfterPrint() {
-            setTimeout(() => {
-                document.getElementById('printLoading').classList.replace('flex', 'hidden');
-                // Kembalikan tampilan tabel dan peta ke data awal secara keseluruhan
-                renderTable(dataLampuFiltered); 
-                renderCustomMapMarkers(dataLampuFiltered, mainMap, mainMapMarkers, false);
-                lockMap('mainMap');
-            }, 1000);
+            // Kembalikan tampilan tabel dan peta ke data awal secara keseluruhan
+            renderTable(dataLampuFiltered); 
+            renderCustomMapMarkers(dataLampuFiltered, mainMap, mainMapMarkers, false);
+            lockMap('mainMap');
         }
 
         window.executePrint = () => {
@@ -1024,13 +1021,21 @@
                 }
                 // Beri waktu LEBIH LAMA (2500ms) agar Browser sempat mendownload gambar peta jalan (tiles) sebelum layar cetak dibekukan
                 setTimeout(() => {
-                    window.print();
-                    restoreAfterPrint();
+                    // MUTLAK: Sembunyikan layar loading SEBELUM print dijalankan agar tidak menutupi kertas!
+                    document.getElementById('printLoading').classList.replace('flex', 'hidden'); 
+                    
+                    setTimeout(() => {
+                        window.print();
+                        restoreAfterPrint();
+                    }, 150); // Jeda sepersekian detik agar browser benar-benar menghapus UI loading
                 }, 2500);
             } else {
                 setTimeout(() => {
-                    window.print();
-                    restoreAfterPrint();
+                    document.getElementById('printLoading').classList.replace('flex', 'hidden');
+                    setTimeout(() => {
+                        window.print();
+                        restoreAfterPrint();
+                    }, 150);
                 }, 500);
             }
         };
