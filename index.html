@@ -24,7 +24,6 @@
         #printArea { display: none; }
         
         @media print {
-            /* Hapus landscape agar laporan foto bisa Portrait memanjang ke bawah dengan rapi */
             @page { margin: 1cm; }
             body { background-color: white; color: black; }
             .no-print { display: none !important; }
@@ -33,58 +32,60 @@
             nav, .tab-nav, #printModal, #customAlert, #photoModal { display: none !important; }
             main { padding: 0 !important; max-width: 100% !important; margin: 0 !important; }
             .shadow-md { box-shadow: none !important; }
-            .rounded-lg { border-radius: 0 !important; }
+            .rounded-lg { border-radius: 0 !important; border: none !important; }
             .bg-white { background: transparent !important; border: none !important; }
-            .col-aksi { display: none !important; }
-            
-            /* Sembunyikan kolom foto di tabel rekap utama karena foto dibuat di halaman terpisah */
-            .col-foto, td:nth-child(6), th:nth-child(6) { display: none !important; }
+            .col-aksi, .col-foto, td:nth-child(6), th:nth-child(6) { display: none !important; }
 
-            /* Tabel Rekapitulasi Mode Print */
+            /* Pengaturan Tabel Cetak */
             table { width: 100% !important; border-collapse: collapse !important; font-size: 11px !important; }
-            th, td { border: 1px solid #ddd !important; padding: 8px !important; vertical-align: middle !important; }
-            th { background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            th, td { border: 1px solid #000 !important; padding: 6px !important; vertical-align: middle !important; color: black !important; }
+            th { background-color: #e5e7eb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: bold !important; }
             
-            /* PETA: Pastikan tinggi pas di A4 dan memaksa halaman baru setelahnya agar tidak terpotong */
+            /* ---- PENGATURAN PEMISAH HALAMAN (ANTI TERPOTONG) ---- */
             .print-map-container { 
+                /* Memaksa elemen ini tidak terpotong di tengah halaman */
                 page-break-inside: avoid !important; 
                 break-inside: avoid !important;
-                page-break-after: always !important; /* Paksa tabel di halaman berikutnya */
-                margin-bottom: 0 !important;
-                padding-bottom: 10px !important;
+                /* Beri jarak, dan pastikan jika tidak muat, pindah ke halaman baru */
+                margin-bottom: 20px !important;
+                position: relative;
+                width: 100%;
+                display: block;
             }
+            
+            /* Tinggi peta akan dikendalikan otomatis lewat JS sebelum print */
             .print-map-active #mainMap { 
-                height: 16cm !important; /* Gunakan satuan fisik agar aman di kertas */
                 width: 100% !important; 
                 border: 2px solid #000 !important; 
+                -webkit-print-color-adjust: exact; 
+                print-color-adjust: exact;
             }
             .print-map-hidden #mainMap-container { display: none !important; }
             
-            .print-table-active #table-container { 
+            /* TABEL REKAPITULASI */
+            .print-table-container {
                 page-break-before: auto !important;
+                width: 100%;
             }
             .print-table-hidden #table-container { display: none !important; }
             
             #printHeader { display: block !important; text-align: center; margin-bottom: 20px; }
             
-            /* Memaksa elemen dengan background merah dicetak dengan warna aslinya */
             .print-exact-color {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
             
-            /* ---- GAYA KHUSUS LAPORAN 1 PEKERJAAN 1 HALAMAN (PHOTO REPORT) ---- */
+            /* LAPORAN FOTO */
             body.print-foto-active #printArea { display: block !important; }
             
             .laporan-page { 
-                /* MENCEGAH LAPORAN TERPOTONG DAN MEMAKSA MULAI DI HALAMAN BARU */
                 page-break-before: always !important;
                 break-before: page !important;
                 page-break-after: always !important;
                 break-after: page !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
-                
                 padding-top: 15px; 
                 font-family: 'Helvetica', 'Arial', sans-serif; 
                 box-sizing: border-box;
@@ -118,7 +119,6 @@
                 print-color-adjust: exact; 
             }
             
-            /* Grid 2 Kolom untuk foto atas */
             .laporan-grid { 
                 display: grid; 
                 grid-template-columns: 1fr 1fr; 
@@ -127,41 +127,19 @@
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
             }
-            .laporan-img-box { 
-                text-align: center; 
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-            }
+            .laporan-img-box { text-align: center; page-break-inside: avoid !important; break-inside: avoid !important; }
             .laporan-img-box p { font-weight: 800; font-size: 12px; margin-bottom: 6px; color: #000; }
-            .laporan-img-box img { 
-                width: 100%; 
-                height: 250px; /* Ukuran gambar diperbesar proporsional */
-                object-fit: contain; 
-                border: 1px solid #d1d5db; 
-                border-radius: 8px; 
-                padding: 4px; 
-            }
+            .laporan-img-box img { width: 100%; height: 250px; object-fit: contain; border: 1px solid #000; border-radius: 4px; padding: 2px; }
             
-            /* Kotak Foto Tengah (Material Baru) */
-            .laporan-img-box-center { 
-                text-align: center; 
-                width: 50%; 
-                margin: 0 auto; 
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-            }
-            .laporan-img-box-center img { 
-                width: 100%; 
-                height: 250px; 
-                object-fit: contain; 
-                border: 1px solid #d1d5db; 
-                border-radius: 8px; 
-                padding: 4px; 
-            }
+            .laporan-img-box-center { text-align: center; width: 50%; margin: 0 auto; page-break-inside: avoid !important; break-inside: avoid !important; }
+            .laporan-img-box-center img { width: 100%; height: 250px; object-fit: contain; border: 1px solid #000; border-radius: 4px; padding: 2px; }
         }
     </style>
 </head>
 <body class="text-gray-800">
+
+    <!-- CSS dinamis untuk ukuran peta akan disisipkan di sini saat print -->
+    <style id="dynamicPrintStyle"></style>
 
     <nav class="bg-blue-600 text-white shadow-md no-print">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -381,8 +359,9 @@
             <div id="mainMap-container" class="bg-white rounded-lg shadow-md p-4 mb-6 border border-gray-100 print-map-container">
                 <div class="flex justify-between items-center mb-4 no-print">
                     <h2 class="text-xl font-bold text-gray-700 flex items-center"><i class="fa-solid fa-map-location-dot text-blue-600 mr-2"></i>Peta Persebaran Pemasangan</h2>
-                    <span id="mapPointCount" class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full border border-blue-200">0 Titik Ditampilkan</span>
+                    <span id="mapPointCount" class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full border border-blue-200 shadow-sm">0 Titik Ditampilkan</span>
                 </div>
+                <!-- Tinggi bawaan layar 500px, saat diprint akan di override oleh JS -->
                 <div class="relative w-full rounded-lg overflow-hidden border border-gray-300 print-exact-color" style="height: 500px;">
                     <div id="overlayMainMap" onclick="unlockMap('mainMap')" class="absolute inset-0 z-[10] bg-black/30 flex flex-col items-center justify-center cursor-pointer transition-opacity hover:bg-black/40 backdrop-blur-[1px] no-print">
                         <i class="fa-solid fa-hand-pointer text-4xl text-white mb-3 drop-shadow-lg animate-bounce"></i>
@@ -406,8 +385,8 @@
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Detail Lampu</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Titik Koordinat</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Keterangan</th>
-                                <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider col-foto">Dokumentasi</th>
-                                <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider col-aksi">Aksi</th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider col-foto no-print">Dokumentasi</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider col-aksi no-print">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="tableBody" class="bg-white divide-y divide-gray-200">
@@ -425,13 +404,12 @@
 
     <!-- Modal Cetak -->
     <div id="printModal" class="fixed inset-0 bg-gray-900/50 z-50 hidden items-center justify-center backdrop-blur-sm">
-        <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h3 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2"><i class="fa-solid fa-print text-blue-600 mr-2"></i>Pengaturan Cetak Laporan</h3>
-            <p class="text-sm text-gray-600 mb-4">Pilih bagian laporan dan rentang nomor urut pekerjaan yang ingin dicetak.</p>
             
             <!-- Filter Nomor Urut Section -->
-            <div class="mb-5 bg-blue-50 p-3 rounded-md border border-blue-100">
-                <span class="block text-xs font-bold text-blue-800 mb-2 uppercase tracking-wide">Filter Rentang Nomor Urut:</span>
+            <div class="mb-4 bg-blue-50 p-3 rounded-md border border-blue-100">
+                <span class="block text-xs font-bold text-blue-800 mb-2 uppercase tracking-wide">1. Rentang Nomor Urut:</span>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs text-gray-600 mb-1">Mulai Nomor Urut</label>
@@ -442,11 +420,22 @@
                         <input type="number" id="printEndNo" class="w-full text-sm rounded border-gray-300 p-1.5 focus:ring-blue-500 focus:border-blue-500" placeholder="Contoh: 10">
                     </div>
                 </div>
-                <span class="block text-[10px] text-gray-500 mt-2 italic">*Kosongkan jika ingin mencetak semua. Tabel dan Peta akan otomatis menyesuaikan rentang ini.</span>
+                <span class="block text-[10px] text-gray-500 mt-2 italic">*Hanya tabel & peta di rentang ini yang akan dicetak.</span>
+            </div>
+
+            <!-- Opsi Ukuran Peta (SOLUSI PETA TERPOTONG) -->
+            <div class="mb-4 p-3 border border-gray-200 rounded-md bg-gray-50">
+                <label class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">2. Ukuran Peta (Cetak):</label>
+                <select id="printMapHeightOpt" class="w-full text-sm rounded border-gray-300 p-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm cursor-pointer font-medium">
+                    <option value="12cm">Setengah Halaman Kecil (12cm)</option>
+                    <option value="16cm" selected>Standar Proporsional (16cm)</option>
+                    <option value="22cm">Besar / Hampir Satu Halaman (22cm)</option>
+                </select>
+                <span class="block text-[10px] text-gray-500 mt-2 leading-tight">Ubah opsi ini secara manual jika peta di hasil print masih menabrak atau terpotong halaman berikutnya.</span>
             </div>
 
             <!-- Opsi Bagian Laporan -->
-            <span class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Bagian yang Dicetak:</span>
+            <span class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">3. Bagian yang Dicetak:</span>
             <div class="space-y-2 mb-6">
                 <label class="flex items-center p-2 border rounded cursor-pointer hover:bg-gray-50 transition">
                     <input type="checkbox" id="printOptMap" checked class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
@@ -460,7 +449,7 @@
                     <input type="checkbox" id="printOptFoto" checked class="w-4 h-4 text-green-600 rounded border-gray-300 focus:ring-green-500">
                     <div class="ml-3">
                         <span class="block text-sm font-bold text-gray-900">Laporan Detail 5 Foto</span>
-                        <span class="block text-[10px] text-gray-600 leading-tight">Mencetak format 1 pekerjaan = 1 halaman penuh. Pastikan sudah filter nomor agar kertas tidak boros.</span>
+                        <span class="block text-[10px] text-gray-600 leading-tight">Format 1 tiang = 1 lembar penuh.</span>
                     </div>
                 </label>
             </div>
@@ -532,6 +521,14 @@
         </div>
     </div>
 
+    <!-- Menampilkan overlay loading saat memproses print agar pengguna tahu sistem tidak macet -->
+    <div id="printLoading" class="fixed inset-0 bg-white/95 z-[999] hidden flex-col items-center justify-center">
+        <i class="fa-solid fa-print text-6xl text-blue-600 mb-4 animate-bounce"></i>
+        <h2 class="text-2xl font-bold text-gray-800">Menyiapkan Dokumen Cetak...</h2>
+        <p class="text-gray-500 mt-2">Sedang memuat gambar jalan & menyusun tabel terfilter.</p>
+        <p class="text-sm font-bold text-red-500 mt-1">Mohon tunggu sebentar, jendela Print akan terbuka otomatis.</p>
+    </div>
+
     <script>
         // === GANTI STRING DI BAWAH INI DENGAN URL WEB APP GOOGLE SCRIPT ANDA ===
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzZ0_I-J98SsuDBgXNOWb7v7zsJOeIyhyiBJyOE1aNjpFPWUkSl6k4pggjyEceiLC_2JQ/exec";
@@ -575,11 +572,11 @@
 
         function initMaps() {
             mapPicker = L.map('mapPicker', { scrollWheelZoom: false, dragging: false, touchZoom: false, doubleClickZoom: false }).setView(KARIMUN_CENTER, ZOOM_LEVEL_KAB);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapPicker);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(mapPicker);
             mapPicker.on('click', function(e) { updateLocationInput(e.latlng.lat, e.latlng.lng); });
 
             mainMap = L.map('mainMap', { scrollWheelZoom: false, dragging: false, touchZoom: false, doubleClickZoom: false }).setView(KARIMUN_CENTER, ZOOM_LEVEL_KAB);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mainMap);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(mainMap);
         }
 
         window.unlockMap = (mapId) => {
@@ -613,19 +610,13 @@
         }
 
         window.getLocation = () => {
-            if (!navigator.geolocation) {
-                showAlert('Error', 'Browser tidak mendukung GPS.', true);
-                return;
-            }
-
+            if (!navigator.geolocation) { showAlert('Error', 'Browser tidak mendukung GPS.', true); return; }
             const btnGetLoc = document.getElementById('btnGetLoc');
             const originalText = btnGetLoc.innerHTML;
             btnGetLoc.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Melacak Sinyal GPS Terbaik...';
             btnGetLoc.disabled = true;
 
-            let watchId;
-            let timeoutId;
-            let bestPosition = null;
+            let watchId, timeoutId, bestPosition = null;
 
             const finishGPS = () => {
                 cleanup();
@@ -635,46 +626,12 @@
                     showAlert('Sukses', `Lokasi didapatkan (Akurasi: ${Math.round(bestPosition.coords.accuracy)}m). Geser pin merah jika kurang pas pada tiang.`, false);
                 }
             };
+            const cleanup = () => { if (watchId) navigator.geolocation.clearWatch(watchId); if (timeoutId) clearTimeout(timeoutId); btnGetLoc.innerHTML = originalText; btnGetLoc.disabled = false; };
+            const successCallback = (position) => { if (!bestPosition || position.coords.accuracy < bestPosition.coords.accuracy) { bestPosition = position; } if (bestPosition.coords.accuracy <= 15) finishGPS(); };
+            const errorCallback = (error) => { if (bestPosition) finishGPS(); else { cleanup(); showAlert('Error Lokasi', 'Gagal melacak GPS. Pastikan GPS aktif dan Anda berada di luar ruangan.', true); } };
 
-            const cleanup = () => {
-                if (watchId) navigator.geolocation.clearWatch(watchId);
-                if (timeoutId) clearTimeout(timeoutId);
-                btnGetLoc.innerHTML = originalText;
-                btnGetLoc.disabled = false;
-            };
-
-            const successCallback = (position) => {
-                if (!bestPosition || position.coords.accuracy < bestPosition.coords.accuracy) {
-                    bestPosition = position;
-                }
-                if (bestPosition.coords.accuracy <= 15) {
-                    finishGPS();
-                }
-            };
-
-            const errorCallback = (error) => {
-                if (bestPosition) {
-                    finishGPS();
-                } else {
-                    cleanup();
-                    showAlert('Error Lokasi', 'Gagal melacak GPS. Pastikan GPS aktif dan Anda berada di luar ruangan.', true);
-                }
-            };
-
-            watchId = navigator.geolocation.watchPosition(successCallback, errorCallback, {
-                enableHighAccuracy: true,
-                maximumAge: 0,
-                timeout: 10000
-            });
-
-            timeoutId = setTimeout(() => {
-                if (bestPosition) {
-                    finishGPS();
-                } else {
-                    cleanup();
-                    showAlert('Peringatan', 'Sinyal GPS lemah atau tidak ditemukan. Coba bergerak ke luar ruangan atau geser pin peta secara manual.', true);
-                }
-            }, 12000);
+            watchId = navigator.geolocation.watchPosition(successCallback, errorCallback, { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 });
+            timeoutId = setTimeout(() => { if (bestPosition) finishGPS(); else { cleanup(); showAlert('Peringatan', 'Sinyal GPS lemah atau tidak ditemukan.', true); } }, 12000);
         };
 
         window.refreshMap = () => { if(mainMap) { mainMap.invalidateSize(); renderMapMarkers(); mainMap.setView(KARIMUN_CENTER, ZOOM_LEVEL_KAB); lockMap('mainMap'); } };
@@ -697,22 +654,15 @@
                         const clean = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
                         const getV = (possibleKeys) => { 
                             const cleanKeys = possibleKeys.map(clean);
-                            for(let k of Object.keys(item)) {
-                                if(item[k] && cleanKeys.includes(clean(k))) return item[k];
-                            }
+                            for(let k of Object.keys(item)) { if(item[k] && cleanKeys.includes(clean(k))) return item[k]; }
                             return ''; 
                         };
                         return {
                             ...item,
-                            timestamp: getV(['timestamp', 'Timestamp', 'waktu']),
-                            nomorUrut: getV(['nomorUrut', 'No Urut']),
-                            kecamatan: getV(['kecamatan', 'Kecamatan']),
-                            jenisLampu: getV(['jenisLampu', 'Jenis Lampu']),
-                            serialNumber: getV(['serialNumber', 'Serial Number']),
-                            lat: getV(['lat', 'Latitude']),
-                            lng: getV(['lng', 'Longitude']),
-                            linkMaps: getV(['linkMaps', 'Link Maps']),
-                            keterangan: getV(['keterangan', 'Keterangan'])
+                            timestamp: getV(['timestamp', 'Timestamp', 'waktu']), nomorUrut: getV(['nomorUrut', 'No Urut']),
+                            kecamatan: getV(['kecamatan', 'Kecamatan']), jenisLampu: getV(['jenisLampu', 'Jenis Lampu']),
+                            serialNumber: getV(['serialNumber', 'Serial Number']), lat: getV(['lat', 'Latitude']),
+                            lng: getV(['lng', 'Longitude']), linkMaps: getV(['linkMaps', 'Link Maps']), keterangan: getV(['keterangan', 'Keterangan'])
                         };
                     });
 
@@ -757,21 +707,16 @@
             const lat = document.getElementById('latitude').value; const lng = document.getElementById('longitude').value;
             if(!lat || !lng) { showAlert("Peringatan", "Titik koordinat harus diisi.", true); return; }
 
-            const fileSeb = document.getElementById('fotoSebelum').files[0];
-            const filePro = document.getElementById('fotoProses').files[0];
-            const fileSel = document.getElementById('fotoSelesai').files[0];
-            const fileBaru = document.getElementById('fotoBaru').files[0]; 
+            const fileSeb = document.getElementById('fotoSebelum').files[0]; const filePro = document.getElementById('fotoProses').files[0];
+            const fileSel = document.getElementById('fotoSelesai').files[0]; const fileBaru = document.getElementById('fotoBaru').files[0]; 
             const fileLama = document.getElementById('fotoLama').files[0]; 
             if (!fileSeb || !filePro || !fileSel || !fileBaru || !fileLama) { showAlert("Peringatan", "Kelima foto wajib diambil/dipilih.", true); return; }
 
             document.getElementById('formLoading').classList.remove('hidden');
 
             try {
-                const base64Seb = await getBase64(fileSeb);
-                const base64Pro = await getBase64(filePro);
-                const base64Sel = await getBase64(fileSel);
-                const base64Baru = await getBase64(fileBaru);
-                const base64Lama = await getBase64(fileLama);
+                const base64Seb = await getBase64(fileSeb); const base64Pro = await getBase64(filePro);
+                const base64Sel = await getBase64(fileSel); const base64Baru = await getBase64(fileBaru); const base64Lama = await getBase64(fileLama);
 
                 let snValue = document.getElementById('serialNumber').value.trim();
                 if (snValue.toUpperCase().startsWith('SN-')) snValue = snValue.substring(3);
@@ -780,17 +725,15 @@
                 const payload = {
                     action: "insert", nomorUrut: document.getElementById('nomorUrut').value, jenisLampu: document.getElementById('jenisLampu').value,
                     serialNumber: finalSerialNumber, kecamatan: document.getElementById('kecamatan').value, lat: parseFloat(lat), lng: parseFloat(lng),
-                    linkMaps: document.getElementById('linkMaps').value,
-                    fotoSeb: base64Seb, fotoPro: base64Pro, fotoSel: base64Sel, fotoBaru: base64Baru, fotoLama: base64Lama, 
+                    linkMaps: document.getElementById('linkMaps').value, fotoSeb: base64Seb, fotoPro: base64Pro, fotoSel: base64Sel, fotoBaru: base64Baru, fotoLama: base64Lama, 
                     keterangan: document.getElementById('keterangan').value
                 };
 
                 const response = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payload) });
                 const result = await response.json();
                 
-                if (result.status === 'success') {
-                    showAlert("Sukses", "Data berhasil disimpan ke Spreadsheet."); resetForm(); fetchData(); switchTab('rekap');
-                } else showAlert("Error", "Gagal menyimpan: " + result.message, true);
+                if (result.status === 'success') { showAlert("Sukses", "Data berhasil disimpan ke Spreadsheet."); resetForm(); fetchData(); switchTab('rekap'); } 
+                else showAlert("Error", "Gagal menyimpan: " + result.message, true);
             } catch (error) { showAlert("Error", "Gagal mengirim data: " + error.message, true); } 
             finally { document.getElementById('formLoading').classList.add('hidden'); }
         });
@@ -798,11 +741,7 @@
         window.resetForm = () => {
             document.getElementById('lampForm').reset();
             document.getElementById('latitude').value = ''; document.getElementById('longitude').value = ''; document.getElementById('linkMaps').value = '';
-            ['Seb', 'Pro', 'Sel', 'Baru', 'Lama'].forEach(suffix => {
-                document.getElementById(`preview${suffix}`).classList.add('hidden');
-                document.getElementById(`icon${suffix}`).classList.remove('hidden');
-                document.getElementById(`preview${suffix}`).src = '';
-            });
+            ['Seb', 'Pro', 'Sel', 'Baru', 'Lama'].forEach(suffix => { document.getElementById(`preview${suffix}`).classList.add('hidden'); document.getElementById(`icon${suffix}`).classList.remove('hidden'); document.getElementById(`preview${suffix}`).src = ''; });
             if(markerPicker) { mapPicker.removeLayer(markerPicker); markerPicker = null; }
             lockMap('mapPicker'); if(mapPicker) mapPicker.setView(KARIMUN_CENTER, ZOOM_LEVEL_KAB);
         };
@@ -817,7 +756,7 @@
             return url;
         }
 
-        // FUNGSI RENDER TABEL SEKARANG MENERIMA DATA ARRAY (BAWAAN = dataLampuFiltered)
+        // --- RENDER TABEL ---
         function renderTable(dataArray = dataLampuFiltered) {
             const tbody = document.getElementById('tableBody');
             document.getElementById('totalDataCount').innerText = `Total: ${dataArray.length} Lampu`;
@@ -831,9 +770,7 @@
                 const clean = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
                 const getVal = (possibleKeys) => { 
                     const cleanKeys = possibleKeys.map(clean);
-                    for(let k of Object.keys(item)) {
-                        if(item[k] && cleanKeys.includes(clean(k))) return item[k];
-                    }
+                    for(let k of Object.keys(item)) { if(item[k] && cleanKeys.includes(clean(k))) return item[k]; }
                     return ''; 
                 };
                 
@@ -844,52 +781,91 @@
                 const urlLama = parseImageUrl(getVal(['fotoLama', 'Foto Lampu Lama', 'Lampu Lama'])); 
                 const ketVal = getVal(['keterangan', 'Keterangan']);
 
-                const dtFoto = encodeURIComponent(JSON.stringify({
-                    seb: urlSeb, pro: urlPro, sel: urlSel, baru: urlBaru, lama: urlLama, 
-                    ket: ketVal || 'Tidak ada keterangan.', title: `No Urut: ${item.nomorUrut || '-'} | SN: ${item.serialNumber || '-'}`
-                }));
+                const dtFoto = encodeURIComponent(JSON.stringify({ seb: urlSeb, pro: urlPro, sel: urlSel, baru: urlBaru, lama: urlLama, ket: ketVal || 'Tidak ada keterangan.', title: `No Urut: ${item.nomorUrut || '-'} | SN: ${item.serialNumber || '-'}` }));
 
                 tr.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${item.nomorUrut || '-'}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm"><span class="px-2.5 py-1 rounded bg-indigo-100 text-indigo-800 font-bold">${item.kecamatan || '-'}</span></td>
                     <td class="px-6 py-4 text-sm font-bold">${item.jenisLampu || '-'}<br><span class="font-mono text-blue-600 font-normal">SN: ${item.serialNumber || '-'}</span></td>
-                    <td class="px-6 py-4 text-sm"><div class="text-xs font-mono bg-gray-100 px-2 py-1 rounded inline-block">${item.lat ? parseFloat(item.lat).toFixed(5) : '-'}, ${item.lng ? parseFloat(item.lng).toFixed(5) : '-'}</div><br><a href="${item.linkMaps || '#'}" target="_blank" class="text-blue-600 hover:underline text-xs"><i class="fa-solid fa-map-location-dot"></i> Buka Maps</a></td>
+                    <td class="px-6 py-4 text-sm"><div class="text-xs font-mono bg-gray-100 px-2 py-1 rounded inline-block">${item.lat ? parseFloat(item.lat).toFixed(5) : '-'}, ${item.lng ? parseFloat(item.lng).toFixed(5) : '-'}</div><br><a href="${item.linkMaps || '#'}" target="_blank" class="text-blue-600 hover:underline text-xs no-print"><i class="fa-solid fa-map-location-dot"></i> Buka Maps</a></td>
                     <td class="px-6 py-4 text-sm min-w-[150px]">${ketVal || '-'}</td>
-                    <td class="px-6 py-4 text-center text-sm font-medium col-foto">
+                    <td class="px-6 py-4 text-center text-sm font-medium col-foto no-print">
                         <button onclick="bukaFotoModal('${dtFoto}')" class="btn-lihat text-white bg-blue-600 px-3 py-1.5 rounded w-full mb-2"><i class="fa-regular fa-image"></i> Lihat</button>
                     </td>
-                    <td class="px-6 py-4 text-right col-aksi"><button onclick="hapusData()" class="text-gray-500 hover:text-blue-600 bg-gray-50 px-2.5 py-1.5 border rounded"><i class="fa-solid fa-circle-info"></i></button></td>
+                    <td class="px-6 py-4 text-right col-aksi no-print"><button onclick="hapusData()" class="text-gray-500 hover:text-blue-600 bg-gray-50 px-2.5 py-1.5 border rounded"><i class="fa-solid fa-circle-info"></i></button></td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        // Fungsi Khusus Untuk Render Marker Peta
-        // Parameter allowAnimation ditambahkan agar saat print animasi dimatikan, mencegah grey tiles
-        function renderCustomMapMarkers(dataArray, mapInstance, markersArray, allowAnimation = true) {
+        // --- RENDER MAPS & AUTO-SPIDERFY (ANTI TUMPANG TINDIH) ---
+        function renderCustomMapMarkers(dataArray, mapInstance, markersArray, isPrintMode = false) {
             if(!mapInstance) return false;
             
-            // Bersihkan marker lama
             markersArray.forEach(marker => mapInstance.removeLayer(marker));
             markersArray.length = 0; 
             
             const bounds = L.latLngBounds(); 
             let hasPoints = false;
             
+            // Array untuk melacak posisi persis (agar tau mana yang numpuk)
+            const occupiedPositions = [];
+
             dataArray.forEach(item => {
                 if(item.lat && item.lng) {
+                    let trueLat = parseFloat(item.lat);
+                    let trueLng = parseFloat(item.lng);
+                    
+                    let drawLat = trueLat;
+                    let drawLng = trueLng;
+
+                    // Deteksi jika tumpang tindih dengan titik yang sudah ada (radius 15 meter)
+                    let overlapCount = 0;
+                    occupiedPositions.forEach(pos => {
+                        // hitung jarak fisik di bumi (meter)
+                        let dist = mapInstance.distance([trueLat, trueLng], [pos.lat, pos.lng]);
+                        if (dist < 15) overlapCount++; // Jika tumpang tindih
+                    });
+
+                    // JIKA TUMPANG TINDIH, SEBARKAN (SPIDERFY)
+                    if (overlapCount > 0) {
+                        // Simpan titik hitam kecil di kordinat ASLI sebagai jangkar
+                        const dot = L.circleMarker([trueLat, trueLng], {
+                            radius: 4, fillColor: '#000', color: '#fff', weight: 1, fillOpacity: 1
+                        }).addTo(mapInstance);
+                        markersArray.push(dot);
+
+                        // Hitung posisi sebaran secara melingkar berdasarkan urutan tumpang tindih
+                        const angle = (overlapCount * 45) * (Math.PI / 180);
+                        const offsetRadius = 0.00015; // Setara ~15-20 meter di peta
+                        drawLat += Math.sin(angle) * offsetRadius;
+                        drawLng += Math.cos(angle) * offsetRadius;
+
+                        // Tarik garis putus-putus dari titik sebaran ke titik asli
+                        const line = L.polyline([[trueLat, trueLng], [drawLat, drawLng]], {
+                            color: '#000', weight: 1.5, dashArray: '3, 4'
+                        }).addTo(mapInstance);
+                        markersArray.push(line);
+                    }
+
+                    // Catat posisi ini sudah terisi
+                    occupiedPositions.push({lat: trueLat, lng: trueLng});
+
                     const noUrutTeks = item.nomorUrut || '';
                     const customHtml = `
-                        <div style="background-color: #ef4444 !important; color: white !important; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #7f1d1d !important; box-shadow: 0px 3px 5px rgba(0,0,0,0.5); -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
+                        <div style="background-color: #ef4444 !important; color: white !important; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white !important; box-shadow: 0px 3px 5px rgba(0,0,0,0.5); -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; position: relative; z-index: 9999;">
                             <span style="font-size: 13px; font-weight: 900; line-height: 1; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">${noUrutTeks}</span>
                         </div>`;
                         
-                    const icon = L.divIcon({ html: customHtml, className: 'custom-leaflet-icon print-exact-color', iconSize: [32, 32], iconAnchor: [16, 16] });
-                    const marker = L.marker([parseFloat(item.lat), parseFloat(item.lng)], {icon: icon}).addTo(mapInstance);
+                    const icon = L.divIcon({ html: customHtml, className: 'custom-leaflet-icon print-exact-color', iconSize: [30, 30], iconAnchor: [15, 15] });
+                    const marker = L.marker([drawLat, drawLng], {icon: icon, zIndexOffset: 1000}).addTo(mapInstance);
                     
                     marker.bindPopup(`<div class="text-sm font-bold mb-1">No. ${item.nomorUrut} - ${item.jenisLampu || '-'}</div><div class="text-xs text-gray-600">SN: ${item.serialNumber || '-'}</div>`);
                     markersArray.push(marker); 
-                    bounds.extend([parseFloat(item.lat), parseFloat(item.lng)]); 
+                    
+                    // Pastikan peta bisa menangkap baik titik asli maupun sebaran
+                    bounds.extend([trueLat, trueLng]); 
+                    bounds.extend([drawLat, drawLng]); 
                     hasPoints = true;
                 }
             });
@@ -897,50 +873,41 @@
             document.getElementById('mapPointCount').innerText = `${hasPoints ? dataArray.length : 0} Titik`;
             
             if (hasPoints) {
-                // Gunakan allowAnimation parameter agar saat print langsung fokus tanpa jeda gerak
-                mapInstance.fitBounds(bounds, { padding: [60, 60], maxZoom: 18, animate: allowAnimation });
+                // Animate = false jika mode print, agar tidak rendering abu-abu karena animasi zoom belum selesai
+                mapInstance.fitBounds(bounds, { padding: [50, 50], maxZoom: 18, animate: !isPrintMode });
             } else {
-                mapInstance.setView(KARIMUN_CENTER, ZOOM_LEVEL_KAB, { animate: allowAnimation });
+                mapInstance.setView(KARIMUN_CENTER, ZOOM_LEVEL_KAB, { animate: !isPrintMode });
             }
             return hasPoints;
         }
 
-        function renderMapMarkers() {
-            renderCustomMapMarkers(dataLampuFiltered, mainMap, mainMapMarkers, true);
-        }
+        function renderMapMarkers() { renderCustomMapMarkers(dataLampuFiltered, mainMap, mainMapMarkers, false); }
 
         window.bukaFotoModal = (dataStr) => {
             const data = JSON.parse(decodeURIComponent(dataStr));
             document.getElementById('photoModalTitle').innerHTML = `<i class="fa-solid fa-images mr-2 text-blue-600"></i>${data.title}`;
-            
             const fallback = 'https://placehold.co/400x300/e2e8f0/64748b?text=Data+Lama+(Kosong)';
             
-            document.getElementById('imgSeb').src = data.seb || fallback; 
-            document.getElementById('imgPro').src = data.pro || fallback; 
-            document.getElementById('imgSel').src = data.sel || fallback;
-            document.getElementById('imgBaru').src = data.baru || fallback;
-            document.getElementById('imgLama').src = data.lama || fallback;
-            
-            document.getElementById('ketModal').innerText = data.ket;
+            document.getElementById('imgSeb').src = data.seb || fallback; document.getElementById('imgPro').src = data.pro || fallback; 
+            document.getElementById('imgSel').src = data.sel || fallback; document.getElementById('imgBaru').src = data.baru || fallback;
+            document.getElementById('imgLama').src = data.lama || fallback; document.getElementById('ketModal').innerText = data.ket;
             document.getElementById('photoModal').classList.remove('hidden'); document.getElementById('photoModal').classList.add('flex');
         };
         
         window.closePhotoModal = () => { document.getElementById('photoModal').classList.add('hidden'); document.getElementById('photoModal').classList.remove('flex'); };
         
         window.openPrintModal = () => { 
-            document.getElementById('printStartNo').value = '';
-            document.getElementById('printEndNo').value = '';
-            document.getElementById('printModal').classList.remove('hidden'); 
-            document.getElementById('printModal').classList.add('flex'); 
+            document.getElementById('printStartNo').value = ''; document.getElementById('printEndNo').value = '';
+            document.getElementById('printModal').classList.remove('hidden'); document.getElementById('printModal').classList.add('flex'); 
         };
-        
         window.closePrintModal = () => { document.getElementById('printModal').classList.add('hidden'); document.getElementById('printModal').classList.remove('flex'); };
 
         function restoreAfterPrint() {
-            // Setelah print selesai atau batal, kembalikan UI seperti semula
             setTimeout(() => {
-                renderTable(dataLampuFiltered); // Kembalikan tabel tampilkan semua data yang difilter sebelumnya
-                renderCustomMapMarkers(dataLampuFiltered, mainMap, mainMapMarkers, true);
+                document.getElementById('printLoading').classList.replace('flex', 'hidden');
+                // Kembalikan tampilan tabel dan peta ke data awal secara keseluruhan
+                renderTable(dataLampuFiltered); 
+                renderCustomMapMarkers(dataLampuFiltered, mainMap, mainMapMarkers, false);
                 lockMap('mainMap');
             }, 1000);
         }
@@ -952,64 +919,57 @@
             
             const startNoStr = document.getElementById('printStartNo').value;
             const endNoStr = document.getElementById('printEndNo').value;
+            const mapHeightOpt = document.getElementById('printMapHeightOpt').value;
             
             if(!withMap && !withTable && !withFoto) { showAlert('Peringatan', 'Pilih minimal satu opsi cetak.', true); return; }
             
-            // --- FILTER DATA BERDASARKAN NOMOR URUT ---
+            // --- 1. FILTER DATA BERDASARKAN NOMOR URUT ---
             let dataToPrint = [...dataLampuFiltered]; 
-            
             if (startNoStr || endNoStr) {
                 const startNo = startNoStr ? parseInt(startNoStr) : Number.MIN_SAFE_INTEGER;
                 const endNo = endNoStr ? parseInt(endNoStr) : Number.MAX_SAFE_INTEGER;
-
                 dataToPrint = dataToPrint.filter(item => {
                     if (!item.nomorUrut) return false; 
                     const itemNo = parseInt(item.nomorUrut);
                     if (isNaN(itemNo)) return false;
                     return itemNo >= startNo && itemNo <= endNo;
                 });
-                
-                if (dataToPrint.length === 0) {
-                    showAlert('Peringatan', 'Tidak ada data ditemukan pada rentang nomor urut tersebut.', true);
-                    return;
-                }
+                if (dataToPrint.length === 0) { showAlert('Peringatan', 'Tidak ada data ditemukan pada rentang nomor urut tersebut.', true); return; }
             }
-            // ---------------------------------------
 
             closePrintModal();
+            document.getElementById('printLoading').classList.replace('hidden', 'flex'); // Munculkan layar loading
+            
+            // --- 2. PERSIAPKAN TABEL AGAR HANYA MENAMPILKAN YANG DIPILIH ---
+            if (withTable) renderTable(dataToPrint);
+
+            // --- 3. PERSIAPKAN LAYOUT DAN UKURAN PETA DINAMIS ---
             const body = document.body;
             body.className = body.className.replace(/print-(map|table|foto)-[a-z-]+/g, '').trim();
-            
             if(!withMap) body.classList.add('print-map-hidden'); else body.classList.add('print-map-active');
             if(!withTable) body.classList.add('print-table-hidden'); else body.classList.add('print-table-active');
             
+            // Suntikkan CSS dinamis untuk tinggi peta sesuai pilihan pengguna
+            let dynamicStyle = document.getElementById('dynamicPrintStyle');
+            if(dynamicStyle) {
+                dynamicStyle.innerHTML = `
+                    @media print {
+                        .print-map-active #mainMap { height: ${mapHeightOpt} !important; }
+                    }
+                `;
+            }
+            
             document.getElementById('printDate').innerText = 'Dicetak pada: ' + new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
             
-            // Tampilkan info rentang nomor urut di Header Laporan Tabel
             const rangeTextEl = document.getElementById('printDateRange');
-            if (startNoStr && endNoStr) {
-                rangeTextEl.innerText = `Filter: Nomor Urut ${startNoStr} s/d ${endNoStr}`;
-                rangeTextEl.classList.remove('hidden');
-            } else if (startNoStr) {
-                rangeTextEl.innerText = `Filter: Mulai Nomor Urut ${startNoStr}`;
-                rangeTextEl.classList.remove('hidden');
-            } else if (endNoStr) {
-                rangeTextEl.innerText = `Filter: Hingga Nomor Urut ${endNoStr}`;
-                rangeTextEl.classList.remove('hidden');
-            } else {
-                rangeTextEl.classList.add('hidden');
-                rangeTextEl.innerText = "";
-            }
-            
-            // --- FIX ISSUE: UPDATE TABEL SEBELUM PRINT ---
-            // Kita ubah isi HTML tabel hanya untuk data yang sudah difilter nomor urutnya
-            if (withTable) {
-                renderTable(dataToPrint);
-            }
+            if (startNoStr && endNoStr) { rangeTextEl.innerText = `Filter: Nomor Urut ${startNoStr} s/d ${endNoStr}`; rangeTextEl.classList.remove('hidden'); } 
+            else if (startNoStr) { rangeTextEl.innerText = `Filter: Mulai Nomor Urut ${startNoStr}`; rangeTextEl.classList.remove('hidden'); } 
+            else if (endNoStr) { rangeTextEl.innerText = `Filter: Hingga Nomor Urut ${endNoStr}`; rangeTextEl.classList.remove('hidden'); } 
+            else { rangeTextEl.classList.add('hidden'); rangeTextEl.innerText = ""; }
 
+            // --- 4. PERSIAPKAN LAPORAN FOTO ---
             const printArea = document.getElementById('printArea');
             printArea.innerHTML = '';
-            
             if (withFoto) {
                 body.classList.add('print-foto-active');
                 let reportsHTML = '';
@@ -1019,107 +979,55 @@
                     const clean = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
                     const getVal = (possibleKeys) => { 
                         const cleanKeys = possibleKeys.map(clean);
-                        for(let k of Object.keys(item)) {
-                            if(item[k] && cleanKeys.includes(clean(k))) return item[k];
-                        }
+                        for(let k of Object.keys(item)) { if(item[k] && cleanKeys.includes(clean(k))) return item[k]; }
                         return ''; 
                     };
-                    
-                    const urlSeb = parseImageUrl(getVal(['fotoSebelum', 'Foto Sebelum', 'Sebelum'])) || fallbackImg;
-                    const urlPro = parseImageUrl(getVal(['fotoProses', 'Foto Proses', 'Pengerjaan', 'Proses'])) || fallbackImg;
-                    const urlSel = parseImageUrl(getVal(['fotoSelesai', 'Foto Selesai', 'Selesai'])) || fallbackImg;
-                    const urlBaru = parseImageUrl(getVal(['fotoBaru', 'Foto Lampu Baru', 'Lampu Baru', 'Foto Seri', 'Seri Lampu'])) || fallbackImg;
+                    const urlSeb = parseImageUrl(getVal(['fotoSebelum', 'Foto Sebelum', 'Sebelum'])) || fallbackImg; const urlPro = parseImageUrl(getVal(['fotoProses', 'Foto Proses', 'Pengerjaan', 'Proses'])) || fallbackImg;
+                    const urlSel = parseImageUrl(getVal(['fotoSelesai', 'Foto Selesai', 'Selesai'])) || fallbackImg; const urlBaru = parseImageUrl(getVal(['fotoBaru', 'Foto Lampu Baru', 'Lampu Baru', 'Foto Seri', 'Seri Lampu'])) || fallbackImg;
                     const urlLama = parseImageUrl(getVal(['fotoLama', 'Foto Lampu Lama', 'Lampu Lama'])) || fallbackImg;
-                    
-                    let fmtWaktu = '-';
-                    if (item.timestamp) {
-                        try { fmtWaktu = new Date(item.timestamp).toLocaleString('id-ID'); }
-                        catch(e) { fmtWaktu = item.timestamp; }
-                    }
-
-                    const lat = item.lat ? parseFloat(item.lat).toFixed(5) : '-';
-                    const lng = item.lng ? parseFloat(item.lng).toFixed(5) : '-';
+                    let fmtWaktu = '-'; if (item.timestamp) { try { fmtWaktu = new Date(item.timestamp).toLocaleString('id-ID'); } catch(e) { fmtWaktu = item.timestamp; } }
+                    const lat = item.lat ? parseFloat(item.lat).toFixed(5) : '-'; const lng = item.lng ? parseFloat(item.lng).toFixed(5) : '-';
                     
                     reportsHTML += `
                         <div class="laporan-page print-exact-color">
-                            <div class="laporan-header">
-                                <h1>LAPORAN PEKERJAAN PJU</h1>
-                                <p>Sistem Informasi Pemeliharaan</p>
-                            </div>
+                            <div class="laporan-header"><h1>LAPORAN PEKERJAAN PJU</h1><p>Sistem Informasi Pemeliharaan</p></div>
                             <div class="laporan-divider"></div>
-
                             <table class="laporan-table">
                                 <tbody>
-                                    <tr>
-                                        <td class="col-label">No Urut / ID Tiang</td>
-                                        <td><strong>No. ${item.nomorUrut || '-'}</strong> | SN: ${item.serialNumber || '-'} [Kec. ${item.kecamatan || '-'}]</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="col-label">Waktu Pekerjaan</td>
-                                        <td>${fmtWaktu}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="col-label">Koordinat</td>
-                                        <td class="text-blue-600 font-mono">${lat}, ${lng}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="col-label">Material Diganti</td>
-                                        <td class="text-blue-600 font-bold">${item.jenisLampu || '-'}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="col-label">Catatan Teknis</td>
-                                        <td>${item.keterangan || '-'}</td>
-                                    </tr>
+                                    <tr><td class="col-label">No Urut / ID Tiang</td><td><strong>No. ${item.nomorUrut || '-'}</strong> | SN: ${item.serialNumber || '-'} [Kec. ${item.kecamatan || '-'}]</td></tr>
+                                    <tr><td class="col-label">Waktu Pekerjaan</td><td>${fmtWaktu}</td></tr>
+                                    <tr><td class="col-label">Koordinat</td><td class="text-blue-600 font-mono">${lat}, ${lng}</td></tr>
+                                    <tr><td class="col-label">Material Diganti</td><td class="text-blue-600 font-bold">${item.jenisLampu || '-'}</td></tr>
+                                    <tr><td class="col-label">Catatan Teknis</td><td>${item.keterangan || '-'}</td></tr>
                                 </tbody>
                             </table>
-
                             <div class="laporan-section-title print-exact-color">DOKUMENTASI VISUAL</div>
-
                             <div class="laporan-grid">
-                                <div class="laporan-img-box">
-                                    <p>1. Kondisi Sebelum</p>
-                                    <img src="${urlSeb}" onerror="this.src='${fallbackImg}'">
-                                </div>
-                                <div class="laporan-img-box">
-                                    <p>2. Sedang Dikerjakan</p>
-                                    <img src="${urlPro}" onerror="this.src='${fallbackImg}'">
-                                </div>
-                                <div class="laporan-img-box">
-                                    <p>3. Kondisi Selesai (Menyala)</p>
-                                    <img src="${urlSel}" onerror="this.src='${fallbackImg}'">
-                                </div>
-                                <div class="laporan-img-box">
-                                    <p>4. Barang Bekas/Rusak</p>
-                                    <img src="${urlLama}" onerror="this.src='${fallbackImg}'">
-                                </div>
+                                <div class="laporan-img-box"><p>1. Kondisi Sebelum</p><img src="${urlSeb}" onerror="this.src='${fallbackImg}'"></div>
+                                <div class="laporan-img-box"><p>2. Sedang Dikerjakan</p><img src="${urlPro}" onerror="this.src='${fallbackImg}'"></div>
+                                <div class="laporan-img-box"><p>3. Kondisi Selesai (Menyala)</p><img src="${urlSel}" onerror="this.src='${fallbackImg}'"></div>
+                                <div class="laporan-img-box"><p>4. Barang Bekas/Rusak</p><img src="${urlLama}" onerror="this.src='${fallbackImg}'"></div>
                             </div>
-                            
-                            <div class="laporan-img-box-center">
-                                <p style="font-weight: 800; font-size: 12px; margin-bottom: 6px; color: #000;">5. Material Baru</p>
-                                <img src="${urlBaru}" onerror="this.src='${fallbackImg}'">
-                            </div>
-                        </div>
-                    `;
+                            <div class="laporan-img-box-center"><p style="font-weight: 800; font-size: 12px; margin-bottom: 6px; color: #000;">5. Material Baru</p><img src="${urlBaru}" onerror="this.src='${fallbackImg}'"></div>
+                        </div>`;
                 });
                 printArea.innerHTML = reportsHTML;
             }
 
+            // --- 5. EKSEKUSI CETAK DENGAN JEDA WAKTU (Mencegah Grey Tiles / Peta Blank) ---
             if (withMap) {
                 unlockMap('mainMap');
                 if (mainMap) {
                     mainMap.invalidateSize();
-                    // Parameter false: MATIKAN ANIMASI agar langsung melompat ke titik (mencegah grey tiles)
-                    renderCustomMapMarkers(dataToPrint, mainMap, mainMapMarkers, false); 
+                    // Parameter True untuk Mode Print -> Matikan animasi agar peta tidak lompat-lompat saat dicetak
+                    renderCustomMapMarkers(dataToPrint, mainMap, mainMapMarkers, true); 
                 }
-                
-                // --- FIX ISSUE: TUNGGU 2 DETIK ---
-                // Beri waktu lebih lama (2000ms) agar Leaflet punya waktu mengunduh kotak gambar jalan (tiles)
+                // Beri waktu LEBIH LAMA (2500ms) agar Browser sempat mendownload gambar peta jalan (tiles) sebelum layar cetak dibekukan
                 setTimeout(() => {
                     window.print();
                     restoreAfterPrint();
-                }, 2000);
+                }, 2500);
             } else {
-                // Jika tidak cetak peta, proses lebih cepat
                 setTimeout(() => {
                     window.print();
                     restoreAfterPrint();
