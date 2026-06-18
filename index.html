@@ -24,8 +24,15 @@
         #printArea { display: none; }
         
         @media print {
-            @page { margin: 1cm; }
-            body { background-color: white; color: black; }
+            @page { 
+                size: auto; 
+                margin: 0mm !important; /* MENGHILANGKAN HEADER/FOOTER BROWSER (Tanggal, Jam, URL bawaan browser) */
+            }
+            body { 
+                background-color: white; 
+                color: black; 
+                padding: 15mm !important; /* Mengembalikan ruang kosong (margin) kertas karena margin @page sudah di-nol-kan */
+            }
             .no-print { display: none !important; }
             .print-only { display: block !important; }
             
@@ -40,13 +47,12 @@
             table { width: 100% !important; border-collapse: collapse !important; font-size: 11px !important; }
             th, td { border: 1px solid #000 !important; padding: 6px !important; vertical-align: middle !important; color: black !important; }
             th { background-color: #e5e7eb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: bold !important; }
+            tr { page-break-inside: avoid !important; break-inside: avoid !important; } /* MENCEGAH BARIS TABEL TERPOTONG DI TENGAH HALAMAN */
             
             /* ---- PENGATURAN PEMISAH HALAMAN (ANTI TERPOTONG) ---- */
             .print-map-container { 
-                /* Memaksa elemen ini tidak terpotong di tengah halaman */
                 page-break-inside: avoid !important; 
                 break-inside: avoid !important;
-                /* Beri jarak, dan pastikan jika tidak muat, pindah ke halaman baru */
                 margin-bottom: 20px !important;
                 position: relative;
                 width: 100%;
@@ -64,8 +70,17 @@
             
             /* TABEL REKAPITULASI */
             .print-table-container {
-                page-break-before: auto !important;
                 width: 100%;
+            }
+            /* JIKA PETA & TABEL DICETAK BERSAMAAN, PAKSA TABEL PINDAH KE HALAMAN BARU AGAR TIDAK NANGGUNG */
+            .print-map-active.print-table-active #table-container {
+                page-break-before: always !important;
+                break-before: page !important;
+            }
+            /* JIKA HANYA CETAK TABEL, BISA MULAI DARI HALAMAN PERTAMA */
+            .print-map-hidden.print-table-active #table-container {
+                page-break-before: auto !important;
+                break-before: auto !important;
             }
             .print-table-hidden #table-container { display: none !important; }
             
@@ -173,8 +188,7 @@
     <div id="printHeader" class="hidden text-center py-4 mb-4 border-b-2 border-black">
         <h1 class="text-2xl font-bold uppercase">Tabel Rekapitulasi Pekerjaan PJU</h1>
         <h2 class="text-lg font-semibold uppercase">Program "Karimunku Terang"</h2>
-        <p class="text-sm text-gray-600" id="printDate"></p>
-        <p class="text-sm font-semibold text-blue-800" id="printDateRange"></p>
+        <p class="text-sm font-semibold text-blue-800 mt-1" id="printDateRange"></p>
     </div>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" id="mainContent">
@@ -955,8 +969,6 @@
                     }
                 `;
             }
-            
-            document.getElementById('printDate').innerText = 'Dicetak pada: ' + new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
             
             const rangeTextEl = document.getElementById('printDateRange');
             if (startNoStr && endNoStr) { rangeTextEl.innerText = `Filter: Nomor Urut ${startNoStr} s/d ${endNoStr}`; rangeTextEl.classList.remove('hidden'); } 
