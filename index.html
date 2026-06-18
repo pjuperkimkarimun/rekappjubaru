@@ -45,11 +45,18 @@
             th, td { border: 1px solid #ddd !important; padding: 8px !important; vertical-align: middle !important; }
             th { background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             
-            .print-map-active #mainMap { height: 500px !important; width: 100% !important; border: 2px solid #000 !important; page-break-after: always; }
+            /* Pastikan peta memiliki tinggi yang cukup saat dicetak dan outline jelas */
+            .print-map-active #mainMap { height: 600px !important; width: 100% !important; border: 2px solid #000 !important; page-break-after: always; }
             .print-map-hidden #mainMap-container { display: none !important; }
             .print-table-hidden #table-container { display: none !important; }
             
             #printHeader { display: block !important; text-align: center; margin-bottom: 20px; }
+            
+            /* Memaksa elemen dengan background merah dicetak dengan warna aslinya */
+            .print-exact-color {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
             
             /* ---- GAYA KHUSUS LAPORAN 1 PEKERJAAN 1 HALAMAN (PHOTO REPORT) ---- */
             body.print-foto-active #printArea { display: block !important; }
@@ -361,12 +368,12 @@
                     <h2 class="text-xl font-bold text-gray-700 flex items-center"><i class="fa-solid fa-map-location-dot text-blue-600 mr-2"></i>Peta Persebaran Pemasangan</h2>
                     <span id="mapPointCount" class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full border border-blue-200">0 Titik Ditampilkan</span>
                 </div>
-                <div class="relative w-full rounded-lg overflow-hidden border border-gray-300" style="height: 500px;">
+                <div class="relative w-full rounded-lg overflow-hidden border border-gray-300 print-exact-color" style="height: 500px;">
                     <div id="overlayMainMap" onclick="unlockMap('mainMap')" class="absolute inset-0 z-[10] bg-black/30 flex flex-col items-center justify-center cursor-pointer transition-opacity hover:bg-black/40 backdrop-blur-[1px] no-print">
                         <i class="fa-solid fa-hand-pointer text-4xl text-white mb-3 drop-shadow-lg animate-bounce"></i>
                         <span class="text-white font-bold drop-shadow-lg text-lg text-center px-4">Peta Dalam Mode Terkunci<br><span class="text-sm font-normal">Ketuk untuk Berinteraksi dengan Peta GIS</span></span>
                     </div>
-                    <div id="mainMap" class="w-full h-full z-0 relative bg-gray-100"></div>
+                    <div id="mainMap" class="w-full h-full z-0 relative bg-gray-100 print-exact-color"></div>
                 </div>
             </div>
 
@@ -396,7 +403,7 @@
             </div>
             
             <!-- Tempat Laporan Foto 1 Halaman / Pekerjaan Akan Dihasilkan oleh Javascript -->
-            <div id="printArea" class="print-only"></div>
+            <div id="printArea" class="print-only print-exact-color"></div>
 
         </section>
     </main>
@@ -420,7 +427,7 @@
                         <input type="number" id="printEndNo" class="w-full text-sm rounded border-gray-300 p-1.5 focus:ring-blue-500 focus:border-blue-500" placeholder="Contoh: 10">
                     </div>
                 </div>
-                <span class="block text-[10px] text-gray-500 mt-2 italic">*Kosongkan jika ingin mencetak semua data yang tampil di tabel saat ini.</span>
+                <span class="block text-[10px] text-gray-500 mt-2 italic">*Kosongkan jika ingin mencetak semua data yang tampil di tabel saat ini. Peta akan otomatis fokus pada rentang ini.</span>
             </div>
 
             <!-- Opsi Bagian Laporan -->
@@ -438,7 +445,7 @@
                     <input type="checkbox" id="printOptFoto" checked class="w-4 h-4 text-green-600 rounded border-gray-300 focus:ring-green-500">
                     <div class="ml-3">
                         <span class="block text-sm font-bold text-gray-900">Laporan Detail 5 Foto</span>
-                        <span class="block text-[10px] text-gray-600 leading-tight">Mencetak format 1 pekerjaan = 1 halaman penuh. Pastikan sudah filter tanggal agar kertas tidak boros.</span>
+                        <span class="block text-[10px] text-gray-600 leading-tight">Mencetak format 1 pekerjaan = 1 halaman penuh. Pastikan sudah filter nomor agar kertas tidak boros.</span>
                     </div>
                 </label>
             </div>
@@ -845,20 +852,55 @@
             });
         }
 
-        function renderMapMarkers() {
-            if(!mainMap) return;
-            mainMapMarkers.forEach(marker => mainMap.removeLayer(marker)); mainMapMarkers = [];
-            const bulbIcon = L.divIcon({ html: '<div style="background-color: #ef4444; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white;"><i class="fa-solid fa-lightbulb text-sm"></i></div>', className: 'custom-leaflet-icon', iconSize: [32, 32], iconAnchor: [16, 16] });
-            const bounds = L.latLngBounds(); let hasPoints = false;
-            dataLampuFiltered.forEach(item => {
+        // Fungsi Khusus Untuk Render Marker Peta yang Presisi dan Berwarna Merah Cetak
+        function renderCustomMapMarkers(dataArray, mapInstance, markersArray) {
+            if(!mapInstance) return false;
+            
+            // Bersihkan marker lama
+            markersArray.forEach(marker => mapInstance.removeLayer(marker));
+            markersArray.length = 0; 
+            
+            const bounds = L.latLngBounds(); 
+            let hasPoints = false;
+            
+            dataArray.forEach(item => {
                 if(item.lat && item.lng) {
-                    const marker = L.marker([parseFloat(item.lat), parseFloat(item.lng)], {icon: bulbIcon}).addTo(mainMap);
-                    marker.bindPopup(`<div class="text-sm font-bold mb-1">${item.jenisLampu || '-'}</div><div class="text-xs text-gray-600">SN: ${item.serialNumber || '-'}</div>`);
-                    mainMapMarkers.push(marker); bounds.extend([parseFloat(item.lat), parseFloat(item.lng)]); hasPoints = true;
+                    // Marker didesain sebagai lingkaran merah dengan Nomor Urut di dalamnya
+                    const noUrutTeks = item.nomorUrut || '';
+                    const customHtml = `
+                        <div style="background-color: #ef4444 !important; color: white !important; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #7f1d1d !important; box-shadow: 0px 3px 5px rgba(0,0,0,0.5); -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
+                            <span style="font-size: 13px; font-weight: 900; line-height: 1; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">${noUrutTeks}</span>
+                        </div>`;
+                        
+                    const icon = L.divIcon({ 
+                        html: customHtml, 
+                        className: 'custom-leaflet-icon print-exact-color', 
+                        iconSize: [32, 32], 
+                        iconAnchor: [16, 16] 
+                    });
+                    
+                    const marker = L.marker([parseFloat(item.lat), parseFloat(item.lng)], {icon: icon}).addTo(mapInstance);
+                    marker.bindPopup(`<div class="text-sm font-bold mb-1">No. ${item.nomorUrut} - ${item.jenisLampu || '-'}</div><div class="text-xs text-gray-600">SN: ${item.serialNumber || '-'}</div>`);
+                    markersArray.push(marker); 
+                    bounds.extend([parseFloat(item.lat), parseFloat(item.lng)]); 
+                    hasPoints = true;
                 }
             });
-            document.getElementById('mapPointCount').innerText = `${hasPoints ? dataLampuFiltered.length : 0} Titik`;
-            if (hasPoints) mainMap.fitBounds(bounds, { padding: [40, 40] });
+            
+            document.getElementById('mapPointCount').innerText = `${hasPoints ? dataArray.length : 0} Titik`;
+            
+            if (hasPoints) {
+                // Zoom mengikuti daerah titik-titik (Padding ditingkatkan agar tidak terlalu mepet dengan pinggir peta)
+                mapInstance.fitBounds(bounds, { padding: [60, 60], maxZoom: 18 });
+            } else {
+                mapInstance.setView(KARIMUN_CENTER, ZOOM_LEVEL_KAB);
+            }
+            return hasPoints;
+        }
+
+        function renderMapMarkers() {
+            // Render normal saat membuka tab Rekap Data
+            renderCustomMapMarkers(dataLampuFiltered, mainMap, mainMapMarkers);
         }
 
         window.bukaFotoModal = (dataStr) => {
@@ -900,14 +942,14 @@
             if(!withMap && !withTable && !withFoto) { showAlert('Peringatan', 'Pilih minimal satu opsi cetak.', true); return; }
             
             // --- FILTER DATA BERDASARKAN NOMOR URUT ---
-            let dataToPrint = [...dataLampuFiltered]; // Ambil data yang sudah terfilter dari search/kecamatan
+            let dataToPrint = [...dataLampuFiltered]; 
             
             if (startNoStr || endNoStr) {
                 const startNo = startNoStr ? parseInt(startNoStr) : Number.MIN_SAFE_INTEGER;
                 const endNo = endNoStr ? parseInt(endNoStr) : Number.MAX_SAFE_INTEGER;
 
                 dataToPrint = dataToPrint.filter(item => {
-                    if (!item.nomorUrut) return false; // Abaikan data tanpa nomor urut jika filter aktif
+                    if (!item.nomorUrut) return false; 
                     
                     const itemNo = parseInt(item.nomorUrut);
                     if (isNaN(itemNo)) return false;
@@ -982,7 +1024,7 @@
                     const lng = item.lng ? parseFloat(item.lng).toFixed(5) : '-';
                     
                     reportsHTML += `
-                        <div class="laporan-page">
+                        <div class="laporan-page print-exact-color">
                             <div class="laporan-header">
                                 <h1>LAPORAN PEKERJAAN PJU</h1>
                                 <p>Sistem Informasi Pemeliharaan</p>
@@ -992,8 +1034,8 @@
                             <table class="laporan-table">
                                 <tbody>
                                     <tr>
-                                        <td class="col-label">ID Tiang / Lokasi</td>
-                                        <td>${item.serialNumber || '-'} - ${item.keterangan || ''} [Kec. ${item.kecamatan || '-'}]</td>
+                                        <td class="col-label">No Urut / ID Tiang</td>
+                                        <td><strong>No. ${item.nomorUrut || '-'}</strong> | SN: ${item.serialNumber || '-'} [Kec. ${item.kecamatan || '-'}]</td>
                                     </tr>
                                     <tr>
                                         <td class="col-label">Waktu Pekerjaan</td>
@@ -1014,7 +1056,7 @@
                                 </tbody>
                             </table>
 
-                            <div class="laporan-section-title">DOKUMENTASI VISUAL</div>
+                            <div class="laporan-section-title print-exact-color">DOKUMENTASI VISUAL</div>
 
                             <div class="laporan-grid">
                                 <div class="laporan-img-box">
@@ -1045,9 +1087,29 @@
                 printArea.innerHTML = reportsHTML;
             }
 
-            unlockMap('mainMap');
-            // Menambahkan delay kecil sebelum memanggil print agar gambar sempat dimuat
-            setTimeout(() => { if(withMap && mainMap) mainMap.invalidateSize(); window.print(); setTimeout(() => lockMap('mainMap'), 500); }, 500);
+            if (withMap) {
+                // Update peta AGAR HANYA MENAMPILKAN TITIK YANG DIPILIH dan OTOMATIS ZOOM ke sana
+                renderCustomMapMarkers(dataToPrint, mainMap, mainMapMarkers);
+                unlockMap('mainMap');
+                
+                if (mainMap) mainMap.invalidateSize();
+                
+                // Beri waktu 1.5 detik (1500ms) agar Leaflet punya waktu mengunduh gambar peta (tiles)
+                // dari jalanan spesifik yang baru saja di-zoom sebelum jendela cetak muncul
+                setTimeout(() => {
+                    window.print();
+                    
+                    // KEMBALIKAN peta ke kondisi semula (semua titik) setelah print selesai
+                    setTimeout(() => {
+                        renderCustomMapMarkers(dataLampuFiltered, mainMap, mainMapMarkers);
+                        lockMap('mainMap');
+                    }, 1000);
+                    
+                }, 1500);
+            } else {
+                // Jika tidak cetak peta, langsung tampilkan Print Dialog
+                window.print();
+            }
         };
 
         window.onload = () => { initMaps(); fetchData(); };
