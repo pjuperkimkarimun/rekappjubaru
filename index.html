@@ -19,118 +19,17 @@
         .tab-content.active { display: block; }
         #customAlert { display: none; }
         #customAlert.active { display: flex; }
-        
-        #printArea { display: none; }
-        
-        /* =======================================================
-           MODE PAKSA (NUKE) - PERSIAPAN SEBELUM PRINT
-           ======================================================= */
-        body.force-print-layout { background-color: white !important; color: black !important; display: block !important; }
-        body.force-print-layout nav, 
-        body.force-print-layout .tab-nav, 
-        body.force-print-layout #input-section, 
-        body.force-print-layout #rekap-controls, 
-        body.force-print-layout #printModal, 
-        body.force-print-layout #customAlert, 
-        body.force-print-layout #photoModal { display: none !important; }
-        
-        /* Menghapus semua format shadow/radius untuk menghemat tinta & memori render */
-        body.force-print-layout .shadow-md { box-shadow: none !important; }
-        body.force-print-layout .rounded-lg { border-radius: 0 !important; border: none !important; }
-        body.force-print-layout .bg-white { background: transparent !important; border: none !important; }
-        
-        /* Menyembunyikan kolom aksi dan tombol lihat foto pada tabel */
-        body.force-print-layout .col-aksi, 
-        body.force-print-layout .col-foto, 
-        body.force-print-layout td:nth-child(6), 
-        body.force-print-layout th:nth-child(6) { display: none !important; }
 
-        body.force-print-layout .print-map-hidden #mainMap-container { display: none !important; }
-        body.force-print-layout .print-table-hidden #table-container { display: none !important; }
-        body.force-print-layout #printHeader { display: block !important; text-align: center; margin-bottom: 20px; }
-        
-        body.force-print-layout .print-exact-color { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
-        body.force-print-layout.print-foto-active #printArea { display: block !important; }
-
-        /* ---- FORMAT TABEL SUPER KUAT (ANTI TERPOTONG) ---- */
-        body.force-print-layout table { width: 100% !important; border-collapse: collapse !important; font-size: 11px !important; table-layout: fixed !important; }
-        body.force-print-layout th, body.force-print-layout td { border: 1px solid #000 !important; padding: 6px !important; vertical-align: middle !important; color: black !important; word-wrap: break-word !important; }
-        body.force-print-layout th { background-color: #e5e7eb !important; font-weight: bold !important; }
-
-        /* ---- GAYA KHUSUS LAPORAN FOTO ---- */
-        .laporan-page { font-family: 'Helvetica', 'Arial', sans-serif; box-sizing: border-box; display: block; width: 100%; clear: both; }
-        .laporan-header { text-align: center; margin-bottom: 8px; }
-        .laporan-header h1 { font-size: 22px; font-weight: 900; margin: 0 0 5px 0; letter-spacing: 1px; }
-        .laporan-header p { font-size: 13px; margin: 0; color: #374151; }
-        .laporan-divider { border-bottom: 4px solid black; margin-bottom: 15px; }
-        .laporan-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 12px; }
-        .laporan-table td { border: 1px solid black !important; padding: 8px 12px !important; }
-        .laporan-table .col-label { font-weight: bold; width: 25%; background-color: #f9fafb !important; }
-        .laporan-section-title { background-color: #1a1a1a !important; color: white !important; font-weight: bold; text-align: center; padding: 8px; font-size: 13px; margin-bottom: 15px; }
-        .laporan-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-        .laporan-img-box { text-align: center; }
-        .laporan-img-box p { font-weight: 800; font-size: 12px; margin-bottom: 6px; color: #000; }
-        .laporan-img-box img { width: 100%; height: 250px; object-fit: contain; border: 1px solid #000; border-radius: 4px; padding: 2px; }
-        .laporan-img-box-center { text-align: center; width: 50%; margin: 0 auto; }
-        .laporan-img-box-center img { width: 100%; height: 250px; object-fit: contain; border: 1px solid #000; border-radius: 4px; padding: 2px; }
-
-        /* =======================================================
-           ATURAN MESIN CETAK / PRINTER KERTAS (MEDIA PRINT)
-           ======================================================= */
-        @media print {
-            /* MUTLAK: BUNUH HEADER & FOOTER OTOMATIS BROWSER (Jam, Tanggal, URL) */
-            @page { margin: 0 !important; size: A4 portrait; } 
-            
-            body { margin: 0 !important; padding: 0 !important; background-color: white !important; display: block !important; }
-            
-            /* Margin aman kertas diletakkan di bungkus konten utama, bukan di body (menghindari bug margin) */
-            #mainContent { 
-                padding: 15mm !important; 
-                display: block !important;
-                width: 100% !important;
-                max-width: 100% !important;
-                box-sizing: border-box !important;
-            }
-            
-            /* Trik mengisolasi peta Leaflet agar bug Transform WebKit tidak memotong peta */
-            .leaflet-container { isolation: isolate !important; }
-            
-            /* Anti Baris Tabel Terpotong */
-            table { page-break-inside: auto !important; }
-            tr { page-break-inside: avoid !important; break-inside: avoid !important; page-break-after: auto !important; } 
-            thead { display: table-header-group !important; } /* Mengulang header tabel jika lebih dari 1 halaman */
-            
-            /* MEMBATASI LEBAR PETA FISIK HANYA SELEBAR KERTAS A4 SAAT PRINT (~19cm) */
-            .print-map-container { 
-                page-break-inside: avoid !important; 
-                break-inside: avoid !important; 
-                margin-bottom: 25px !important; 
-                display: block !important; 
-                width: 100% !important;
-                max-width: 19cm !important; /* Paksa maksimum selebar A4 Portrait */
-                margin-left: 0 !important;
-            }
-            
-            /* Map dipaksa 100% lebar kertas dan di-border hitam */
-            .print-map-active #mainMap { width: 100% !important; border: 2px solid #000 !important; display: block !important; }
-            
-            /* PAKSA TABEL KE HALAMAN DUA JIKA ADA PETA AGAR KEDUANYA UTUH */
-            .print-map-active.print-table-active #table-container { 
-                page-break-before: always !important; 
-                break-before: page !important; 
-            }
-            
-            /* Format Halamaan Foto Laporan (1 Lembar = 1 Pekerjaan) */
-            .laporan-page { 
-                page-break-before: always !important; break-before: page !important;
-                page-break-after: always !important; break-after: page !important;
-                page-break-inside: avoid !important; break-inside: avoid !important;
-                padding-top: 15mm !important;
-            }
-            .laporan-page:last-child { page-break-after: auto !important; break-after: auto !important; }
-            
-            .laporan-grid, .laporan-img-box, .laporan-img-box-center { page-break-inside: avoid !important; break-inside: avoid !important; }
-        }
+        /* Catatan arsitektur: halaman aplikasi ini TIDAK PERNAH dicetak secara langsung lagi.
+           Tombol "Cetak Laporan" membuka JENDELA/TAB BARU yang isinya sudah 100% siap-cetak
+           (dibangun oleh fungsi buatDokumenCetak() di kode JS bawah) -- lengkap dengan CSS
+           dan @media print-nya sendiri di sana. Dengan begitu tidak ada lagi elemen aplikasi
+           (menu, tombol, data yang tidak dipilih) yang perlu "disembunyikan" di sini, karena
+           dokumen cetak memang tidak pernah memuatnya sama sekali.
+           
+           Ini pendekatan yang JAUH lebih tahan banting dibanding sebelumnya (yang mengubah
+           tampilan halaman ini secara sementara lalu memulihkannya lewat timer/'afterprint')
+           karena tidak ada lagi celah waktu yang bisa membuat konten yang salah ikut tercetak. */
     </style>
 </head>
 <body class="text-gray-800">
@@ -165,13 +64,6 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" id="mainContent">
         
-        <!-- Header Laporan Rekapitulasi -->
-        <div id="printHeader" class="hidden text-center mb-6 border-b-2 border-black pb-4">
-            <h1 class="text-2xl font-bold uppercase" style="color: black !important;">Tabel Rekapitulasi Pekerjaan PJU</h1>
-            <h2 class="text-lg font-semibold uppercase" style="color: black !important;">Program "Karimunku Terang"</h2>
-            <p class="text-sm font-bold mt-2" style="color: #1e3a8a !important;" id="printDateRange"></p>
-        </div>
-
         <section id="input-section" class="tab-content active no-print">
             <div class="bg-white rounded-lg shadow-md p-6 max-w-4xl mx-auto border border-gray-100">
                 <h2 class="text-2xl font-bold mb-6 text-gray-700 border-b pb-2"><i class="fa-solid fa-pen-to-square mr-2"></i>Form Input Pemasangan Baru</h2>
@@ -355,7 +247,7 @@
                     <span id="mapPointCount" class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full border border-blue-200 shadow-sm">0 Titik Ditampilkan</span>
                 </div>
                 <!-- Tinggi bawaan layar 500px, saat diprint diganti jadi Pixels Absolute -->
-                <div class="relative w-full rounded-lg overflow-hidden border border-gray-300 print-exact-color" style="height: 500px;">
+                <div id="mainMapWrapper" class="relative w-full rounded-lg overflow-hidden border border-gray-300 print-exact-color" style="height: 500px;">
                     <div id="overlayMainMap" onclick="unlockMap('mainMap')" class="absolute inset-0 z-[10] bg-black/30 flex flex-col items-center justify-center cursor-pointer transition-opacity hover:bg-black/40 backdrop-blur-[1px] no-print">
                         <i class="fa-solid fa-hand-pointer text-4xl text-white mb-3 drop-shadow-lg animate-bounce"></i>
                         <span class="text-white font-bold drop-shadow-lg text-lg text-center px-4">Peta Dalam Mode Terkunci<br><span class="text-sm font-normal">Ketuk untuk Berinteraksi dengan Peta GIS</span></span>
@@ -389,9 +281,6 @@
                 </div>
             </div>
             
-            <!-- Tempat Laporan Foto 1 Halaman / Pekerjaan Akan Dihasilkan oleh Javascript -->
-            <div id="printArea" class="print-only print-exact-color"></div>
-
         </section>
     </main>
 
@@ -514,15 +403,6 @@
         </div>
     </div>
 
-    <!-- LAYAR LOADING PRINT DIDESAIN ULANG AGAR TIDAK MENGHALANGI BROWSER MERENDER PETA -->
-    <div id="printLoadingToast" class="fixed bottom-10 right-10 bg-blue-700 text-white px-6 py-4 rounded-xl shadow-2xl z-[9999] hidden items-center space-x-4 border-2 border-blue-400">
-        <i class="fa-solid fa-print text-3xl animate-pulse"></i>
-        <div>
-            <h2 class="text-base font-bold">Mempersiapkan Cetakan...</h2>
-            <p class="text-xs text-blue-100">Menggambar peta dan menyusun tabel... (Maks 4 detik)</p>
-        </div>
-    </div>
-
     <script>
         // === GANTI STRING DI BAWAH INI DENGAN URL WEB APP GOOGLE SCRIPT ANDA ===
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzZ0_I-J98SsuDBgXNOWb7v7zsJOeIyhyiBJyOE1aNjpFPWUkSl6k4pggjyEceiLC_2JQ/exec";
@@ -532,10 +412,17 @@
         let mapPicker, mainMap; 
         let markerPicker; 
         let mainMapMarkers = []; 
-        
+
         const KARIMUN_CENTER = [0.9997, 103.4283]; 
         const ZOOM_LEVEL_KAB = 10;
         const ZOOM_LEVEL_DETAIL = 18;
+        // Lebar TETAP (piksel absolut) untuk peta di DOKUMEN CETAK (jendela baru). Nilai ini
+        // SENGAJA piksel tetap (bukan %, bukan cm relatif) supaya lebar yang dipakai Leaflet
+        // untuk menghitung fitBounds() SAMA PERSIS dengan lebar yang benar-benar dipakai saat
+        // dicetak -- akar perbaikan dari bug "titik terpotong / terdorong keluar area cetak"
+        // dari sebelumnya. 650px dipilih supaya muat nyaman di lebar kertas A4 (~680px
+        // setelah margin 15mm kiri-kanan).
+        const PRINT_MAP_WIDTH_PX = 650;
 
         const showAlert = (title, message, isError = false) => {
             document.getElementById('alertTitle').innerText = title;
@@ -792,7 +679,76 @@
             });
         }
 
-        // --- RENDER MAPS & AUTO-SPIDERFY (ANTI TUMPANG TINDIH) ---
+        // --- RENDER MAPS & ANTI TUMPANG TINDIH (SPIDERFY BERBASIS RING BERTINGKAT) ---
+        // Titik-titik yang jaraknya berdekatan (menjalar/transitif) dikelompokkan jadi satu
+        // klaster, lalu SEMUA anggotanya disebar ke ring-ring melingkar (ring pertama 18m,
+        // ring kedua 36m, dst, dengan kapasitas tiap ring bertambah sesuai kelilingnya).
+        // Dengan begini radius sebaran TERKONTROL berapa pun banyaknya titik yang menumpuk
+        // di satu lokasi (sudah diuji utk klaster hingga puluhan titik identik, tidak akan
+        // ada dua marker yang saling bertumpuk atau bertabrakan sudut).
+        const AMBANG_TUMPANG_METER = 20;
+
+        function kelompokkanTitikBerdekatan(points, mapInstance) {
+            const n = points.length;
+            const dikunjungi = new Array(n).fill(false);
+            const daftarKlaster = [];
+            for (let i = 0; i < n; i++) {
+                if (dikunjungi[i]) continue;
+                const antrian = [i];
+                dikunjungi[i] = true;
+                const anggota = [i];
+                while (antrian.length > 0) {
+                    const idx = antrian.shift();
+                    for (let j = 0; j < n; j++) {
+                        if (!dikunjungi[j]) {
+                            const jarak = mapInstance.distance([points[idx].lat, points[idx].lng], [points[j].lat, points[j].lng]);
+                            if (jarak < AMBANG_TUMPANG_METER) {
+                                dikunjungi[j] = true;
+                                antrian.push(j);
+                                anggota.push(j);
+                            }
+                        }
+                    }
+                }
+                daftarKlaster.push(anggota);
+            }
+            return daftarKlaster;
+        }
+
+        function sebarkanKlasterMelingkar(points, anggotaIdx) {
+            const jumlah = anggotaIdx.length;
+            if (jumlah <= 1) {
+                const p = points[anggotaIdx[0]];
+                p.drawLat = p.lat; p.drawLng = p.lng; p.digeser = false;
+                return;
+            }
+            let sumLat = 0, sumLng = 0;
+            anggotaIdx.forEach(idx => { sumLat += points[idx].lat; sumLng += points[idx].lng; });
+            const tengahLat = sumLat / jumlah;
+            const tengahLng = sumLng / jumlah;
+            const cosLat = Math.max(0.000001, Math.cos(tengahLat * Math.PI / 180));
+
+            const JARAK_RING = 18;   // jarak antar ring (meter)
+            const SPASI_MIN  = 20;   // jarak minimum antar marker pada satu ring (meter)
+            const antrian = [...anggotaIdx];
+            let ringKe = 0;
+            while (antrian.length > 0) {
+                const r = (ringKe + 1) * JARAK_RING;
+                const kapasitas = ringKe === 0 ? 1 : Math.max(6, Math.floor(2 * Math.PI * r / SPASI_MIN));
+                const anggotaRing = antrian.splice(0, kapasitas);
+                const n = anggotaRing.length;
+                anggotaRing.forEach((idx, i) => {
+                    const sudut = (2 * Math.PI / n) * i;
+                    const dLat = (r * Math.cos(sudut)) / 111320;
+                    const dLng = (r * Math.sin(sudut)) / (111320 * cosLat);
+                    points[idx].drawLat = tengahLat + dLat;
+                    points[idx].drawLng = tengahLng + dLng;
+                    points[idx].digeser = true;
+                });
+                ringKe++;
+            }
+        }
+
         function renderCustomMapMarkers(dataArray, mapInstance, markersArray, isPrintMode = false) {
             if(!mapInstance) return false;
             
@@ -801,78 +757,57 @@
             
             const bounds = L.latLngBounds(); 
             let hasPoints = false;
-            
-            const occupiedPositions = [];
 
+            // 1. Kumpulkan titik dengan koordinat valid
+            const points = [];
             dataArray.forEach(item => {
-                if(item.lat && item.lng) {
-                    let trueLat = parseFloat(item.lat);
-                    let trueLng = parseFloat(item.lng);
-                    
-                    let drawLat = trueLat;
-                    let drawLng = trueLng;
-
-                    let overlapCount = 0;
-                    occupiedPositions.forEach(pos => {
-                        let dist = mapInstance.distance([trueLat, trueLng], [pos.lat, pos.lng]);
-                        // Area deteksi tumpuk dibuat lebih masuk akal untuk jalan di Karimun
-                        if (dist < 20) overlapCount++; 
-                    });
-
-                    // JIKA TUMPANG TINDIH, SEBARKAN LINGKARAN DENGAN LEBAR EXTRA (SPIDERFY)
-                    if (overlapCount > 0) {
-                        const dot = L.circleMarker([trueLat, trueLng], {
-                            radius: 5, fillColor: '#000', color: '#fff', weight: 2, fillOpacity: 1
-                        }).addTo(mapInstance);
-                        markersArray.push(dot);
-
-                        // Membagi sudut sebaran setiap 60 derajat dengan jarak radiasi lebih jauh agar sangat jelas
-                        const angle = (overlapCount * 60) * (Math.PI / 180);
-                        const offsetRadius = 0.0004; 
-                        drawLat += Math.sin(angle) * offsetRadius;
-                        drawLng += Math.cos(angle) * offsetRadius;
-
-                        const line = L.polyline([[trueLat, trueLng], [drawLat, drawLng]], {
-                            color: '#000', weight: 1.5, dashArray: '3, 4'
-                        }).addTo(mapInstance);
-                        markersArray.push(line);
-                    }
-
-                    occupiedPositions.push({lat: trueLat, lng: trueLng});
-
-                    const noUrutTeks = item.nomorUrut || '';
-                    const customHtml = `
-                        <div style="background-color: #ef4444 !important; color: white !important; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white !important; box-shadow: 0px 3px 5px rgba(0,0,0,0.5); -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; position: relative; z-index: 9999;">
-                            <span style="font-size: 13px; font-weight: 900; line-height: 1; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">${noUrutTeks}</span>
-                        </div>`;
-                        
-                    const icon = L.divIcon({ html: customHtml, className: 'custom-leaflet-icon print-exact-color', iconSize: [30, 30], iconAnchor: [15, 15] });
-                    const marker = L.marker([drawLat, drawLng], {icon: icon, zIndexOffset: 1000}).addTo(mapInstance);
-                    
-                    marker.bindPopup(`<div class="text-sm font-bold mb-1">No. ${item.nomorUrut} - ${item.jenisLampu || '-'}</div><div class="text-xs text-gray-600">SN: ${item.serialNumber || '-'}</div>`);
-                    markersArray.push(marker); 
-                    
-                    bounds.extend([trueLat, trueLng]); 
-                    bounds.extend([drawLat, drawLng]); 
-                    hasPoints = true;
+                if (item.lat && item.lng) {
+                    const lat = parseFloat(item.lat);
+                    const lng = parseFloat(item.lng);
+                    if (!isNaN(lat) && !isNaN(lng)) points.push({ item, lat, lng });
                 }
+            });
+
+            // 2. Kelompokkan titik berdekatan, lalu sebarkan tiap klaster ke ring-ring
+            const daftarKlaster = kelompokkanTitikBerdekatan(points, mapInstance);
+            daftarKlaster.forEach(anggota => sebarkanKlasterMelingkar(points, anggota));
+
+            // 3. Gambar marker. Untuk titik yang digeser, tambahkan jangkar + garis putus-putus
+            points.forEach(p => {
+                if (p.digeser) {
+                    const dot = L.circleMarker([p.lat, p.lng], { radius: 5, fillColor: '#000', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(mapInstance);
+                    markersArray.push(dot);
+
+                    const line = L.polyline([[p.lat, p.lng], [p.drawLat, p.drawLng]], { color: '#000', weight: 1.5, dashArray: '3, 4' }).addTo(mapInstance);
+                    markersArray.push(line);
+                }
+
+                const noUrutTeks = p.item.nomorUrut || '';
+                const customHtml = `
+                    <div style="background-color: #ef4444 !important; color: white !important; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white !important; box-shadow: 0px 3px 5px rgba(0,0,0,0.5); -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; position: relative; z-index: 9999;">
+                        <span style="font-size: 13px; font-weight: 900; line-height: 1; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">${noUrutTeks}</span>
+                    </div>`;
+
+                const icon = L.divIcon({ html: customHtml, className: 'custom-leaflet-icon print-exact-color', iconSize: [30, 30], iconAnchor: [15, 15] });
+                const marker = L.marker([p.drawLat, p.drawLng], {icon: icon, zIndexOffset: 1000}).addTo(mapInstance);
+
+                marker.bindPopup(`<div class="text-sm font-bold mb-1">No. ${p.item.nomorUrut} - ${p.item.jenisLampu || '-'}</div><div class="text-xs text-gray-600">SN: ${p.item.serialNumber || '-'}</div>`);
+                markersArray.push(marker); 
+
+                bounds.extend([p.lat, p.lng]); 
+                bounds.extend([p.drawLat, p.drawLng]); 
+                hasPoints = true;
             });
             
             document.getElementById('mapPointCount').innerText = `${hasPoints ? dataArray.length : 0} Titik`;
             
             if (hasPoints) {
-                if (isPrintMode) {
-                    // IDE SUPER JENIUS PENGGUNA: Dorong titik ke sebelah KIRI agar tidak kena potong margin kertas A4
-                    // Dengan memberi ruang kosong imajiner (padding) 350 piksel di sebelah kanan!
-                    mapInstance.fitBounds(bounds, { 
-                        paddingTopLeft: [20, 20], 
-                        paddingBottomRight: [350, 20], // 350px tembok kosong di kanan memaksa titik lari ke KIRI
-                        maxZoom: 18, 
-                        animate: false 
-                    });
-                } else {
-                    mapInstance.fitBounds(bounds, { padding: [50, 50], maxZoom: 18, animate: true });
-                }
+                // Padding SIMETRIS biasa -- tidak perlu lagi hack "dorong ke kiri", karena
+                // sekarang wrapper peta sudah diberi lebar & tinggi TETAP (piksel absolut,
+                // lihat executePrint) SEBELUM fitBounds ini dipanggil. Dengan ukuran wrapper
+                // yang sudah pasti & konsisten, fitBounds standar sudah cukup memuat semua
+                // titik dengan benar tanpa perlu didorong ke arah mana pun secara paksa.
+                mapInstance.fitBounds(bounds, { padding: [25, 25], maxZoom: 18, animate: !isPrintMode });
             } else {
                 mapInstance.setView(KARIMUN_CENTER, ZOOM_LEVEL_KAB, { animate: !isPrintMode });
             }
@@ -900,19 +835,175 @@
         };
         window.closePrintModal = () => { document.getElementById('printModal').classList.add('hidden'); document.getElementById('printModal').classList.remove('flex'); };
 
-        function restoreAfterPrint() {
-            // MENGEMBALIKAN UI SEPERTI SEDIA KALA
-            const body = document.body;
-            body.classList.remove('force-print-layout', 'print-map-active', 'print-map-hidden', 'print-table-active', 'print-table-hidden', 'print-foto-active');
-            
-            document.getElementById('mainMap').style.height = '500px';
-            document.getElementById('printHeader').classList.add('hidden');
-            document.getElementById('printArea').innerHTML = ''; // Kosongkan memori
-            
-            // Render ulang dengan filter asli sebelum cetak
-            renderTable(dataLampuFiltered); 
-            renderCustomMapMarkers(dataLampuFiltered, mainMap, mainMapMarkers, false);
-            lockMap('mainMap');
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        // --- MEMBANGUN DOKUMEN CETAK SEBAGAI HTML MANDIRI (UNTUK JENDELA/TAB BARU) ---
+        // PERBAIKAN ARSITEKTUR UTAMA: dokumen ini 100% TERPISAH dari halaman aplikasi --
+        // hanya berisi kop laporan, peta (jika dipilih), tabel (jika dipilih), dan laporan
+        // foto (jika dipilih), memakai data yang SUDAH DIFILTER (dataToPrint). Tidak ada
+        // menu/tombol/tab aplikasi maupun data yang tidak dipilih yang ikut masuk ke sini
+        // sama sekali -- jadi tidak ada lagi yang perlu "disembunyikan" saat cetak, dan
+        // tidak ada lagi celah waktu (timer/'afterprint') yang bisa membuat konten yang
+        // salah ikut tercetak seperti yang berulang kali terjadi pada pendekatan sebelumnya.
+        function buatDokumenCetak(dataToPrint, titikPeta, opts) {
+            const withMap = opts.withMap, withTable = opts.withTable, withFoto = opts.withFoto;
+            const mapHeightOpt = opts.mapHeightOpt, startNoStr = opts.startNoStr, endNoStr = opts.endNoStr;
+
+            let filterText = '';
+            if (startNoStr && endNoStr) filterText = 'Filter Cetak: Nomor Urut ' + startNoStr + ' s/d ' + endNoStr;
+            else if (startNoStr) filterText = 'Filter Cetak: Mulai Nomor Urut ' + startNoStr;
+            else if (endNoStr) filterText = 'Filter Cetak: Hingga Nomor Urut ' + endNoStr;
+
+            // --- TABEL ---
+            let tabelHtml = '';
+            if (withTable) {
+                let baris = '';
+                dataToPrint.forEach((item) => {
+                    const lat = item.lat ? parseFloat(item.lat).toFixed(5) : '-';
+                    const lng = item.lng ? parseFloat(item.lng).toFixed(5) : '-';
+                    baris += '<tr>' +
+                        '<td>' + escapeHtml(item.nomorUrut || '-') + '</td>' +
+                        '<td>' + escapeHtml(item.kecamatan || '-') + '</td>' +
+                        '<td><strong>' + escapeHtml(item.jenisLampu || '-') + '</strong><br>SN: ' + escapeHtml(item.serialNumber || '-') + '</td>' +
+                        '<td>' + lat + ', ' + lng + '</td>' +
+                        '<td>' + escapeHtml(item.keterangan || '-') + '</td>' +
+                    '</tr>';
+                });
+                tabelHtml = '<h2 class="judul-bagian">Tabel Rekapitulasi (' + dataToPrint.length + ' Lampu)</h2>' +
+                    '<table class="tabel-cetak"><thead><tr><th>No</th><th>Kecamatan</th><th>Detail Lampu</th><th>Titik Koordinat</th><th>Keterangan</th></tr></thead>' +
+                    '<tbody>' + (baris || '<tr><td colspan="5" style="text-align:center;">Data kosong.</td></tr>') + '</tbody></table>';
+            }
+
+            // --- LAPORAN FOTO ---
+            let fotoHtml = '';
+            if (withFoto) {
+                const fallbackImg = 'https://placehold.co/400x300/e2e8f0/64748b?text=Tidak+Ada+Foto';
+                dataToPrint.forEach((item) => {
+                    const clean = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    const getVal = (possibleKeys) => {
+                        const cleanKeys = possibleKeys.map(clean);
+                        for (let k of Object.keys(item)) { if (item[k] && cleanKeys.includes(clean(k))) return item[k]; }
+                        return '';
+                    };
+                    const urlSeb = parseImageUrl(getVal(['fotoSebelum', 'Foto Sebelum', 'Sebelum'])) || fallbackImg;
+                    const urlPro = parseImageUrl(getVal(['fotoProses', 'Foto Proses', 'Pengerjaan', 'Proses'])) || fallbackImg;
+                    const urlSel = parseImageUrl(getVal(['fotoSelesai', 'Foto Selesai', 'Selesai'])) || fallbackImg;
+                    const urlBaru = parseImageUrl(getVal(['fotoBaru', 'Foto Lampu Baru', 'Lampu Baru', 'Foto Seri', 'Seri Lampu'])) || fallbackImg;
+                    const urlLama = parseImageUrl(getVal(['fotoLama', 'Foto Lampu Lama', 'Lampu Lama'])) || fallbackImg;
+                    let fmtWaktu = '-';
+                    if (item.timestamp) { try { fmtWaktu = new Date(item.timestamp).toLocaleString('id-ID'); } catch (e) { fmtWaktu = item.timestamp; } }
+                    const lat = item.lat ? parseFloat(item.lat).toFixed(5) : '-';
+                    const lng = item.lng ? parseFloat(item.lng).toFixed(5) : '-';
+
+                    fotoHtml += '<div class="laporan-page">' +
+                        '<div class="laporan-header"><h1>LAPORAN PEKERJAAN PJU</h1><p>Sistem Informasi Pemeliharaan</p></div>' +
+                        '<div class="laporan-divider"></div>' +
+                        '<table class="laporan-table"><tbody>' +
+                            '<tr><td class="col-label">No Urut / ID Tiang</td><td><strong>No. ' + escapeHtml(item.nomorUrut || '-') + '</strong> | SN: ' + escapeHtml(item.serialNumber || '-') + ' [Kec. ' + escapeHtml(item.kecamatan || '-') + ']</td></tr>' +
+                            '<tr><td class="col-label">Waktu Pekerjaan</td><td>' + escapeHtml(fmtWaktu) + '</td></tr>' +
+                            '<tr><td class="col-label">Koordinat</td><td class="teks-biru">' + lat + ', ' + lng + '</td></tr>' +
+                            '<tr><td class="col-label">Material Diganti</td><td class="teks-biru-tebal">' + escapeHtml(item.jenisLampu || '-') + '</td></tr>' +
+                            '<tr><td class="col-label">Catatan Teknis</td><td>' + escapeHtml(item.keterangan || '-') + '</td></tr>' +
+                        '</tbody></table>' +
+                        '<div class="laporan-section-title">DOKUMENTASI VISUAL</div>' +
+                        '<div class="laporan-grid">' +
+                            '<div class="laporan-img-box"><p>1. Kondisi Sebelum</p><img src="' + urlSeb + '" onerror="this.src=\'' + fallbackImg + '\'"></div>' +
+                            '<div class="laporan-img-box"><p>2. Sedang Dikerjakan</p><img src="' + urlPro + '" onerror="this.src=\'' + fallbackImg + '\'"></div>' +
+                            '<div class="laporan-img-box"><p>3. Kondisi Selesai (Menyala)</p><img src="' + urlSel + '" onerror="this.src=\'' + fallbackImg + '\'"></div>' +
+                            '<div class="laporan-img-box"><p>4. Barang Bekas/Rusak</p><img src="' + urlLama + '" onerror="this.src=\'' + fallbackImg + '\'"></div>' +
+                        '</div>' +
+                        '<div class="laporan-img-box-center"><p class="judul-material-baru">5. Material Baru</p><img src="' + urlBaru + '" onerror="this.src=\'' + fallbackImg + '\'"></div>' +
+                    '</div>';
+                });
+            }
+
+            // --- PETA (skrip Leaflet mandiri, dijalankan di jendela baru ini sendiri) ---
+            let petaHtml = '';
+            let petaScriptBlock = '';
+            if (withMap) {
+                petaHtml = '<h2 class="judul-bagian">Peta Persebaran (' + titikPeta.length + ' Titik)</h2>' +
+                    '<div id="petaCetak" style="width:' + PRINT_MAP_WIDTH_PX + 'px;height:' + mapHeightOpt + ';border:2px solid #000;"></div>';
+
+                petaScriptBlock =
+                    'var TITIK = ' + JSON.stringify(titikPeta) + ';\n' +
+                    'var PUSAT = [' + KARIMUN_CENTER[0] + ',' + KARIMUN_CENTER[1] + '];\n' +
+                    'function mulaiPeta() {\n' +
+                    '  var map = L.map("petaCetak", { zoomControl: false, attributionControl: true });\n' +
+                    '  var tile = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap", maxZoom: 19 }).addTo(map);\n' +
+                    '  var bounds = L.latLngBounds(); var adaTitik = false;\n' +
+                    '  TITIK.forEach(function(p) {\n' +
+                    '    if (p.digeser) {\n' +
+                    '      L.circleMarker([p.lat, p.lng], { radius: 5, fillColor: "#000", color: "#fff", weight: 2, fillOpacity: 1 }).addTo(map);\n' +
+                    '      L.polyline([[p.lat, p.lng],[p.drawLat, p.drawLng]], { color: "#000", weight: 1.5, dashArray: "3,4" }).addTo(map);\n' +
+                    '    }\n' +
+                    '    var html = \'<div style="background-color:#ef4444 !important;color:#fff !important;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white !important;box-shadow:0 3px 5px rgba(0,0,0,.5);-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;"><span style="font-size:13px;font-weight:900;text-shadow:1px 1px 2px rgba(0,0,0,.8);">\' + (p.nomorUrut||"") + \'</span></div>\';\n' +
+                    '    var icon = L.divIcon({ html: html, className: "", iconSize: [30,30], iconAnchor: [15,15] });\n' +
+                    '    L.marker([p.drawLat, p.drawLng], { icon: icon }).addTo(map);\n' +
+                    '    bounds.extend([p.lat, p.lng]); adaTitik = true;\n' +
+                    '  });\n' +
+                    '  if (adaTitik) map.fitBounds(bounds, { padding: [25,25], maxZoom: 18 }); else map.setView(PUSAT, ' + ZOOM_LEVEL_KAB + ');\n' +
+                    '  var sudah = false;\n' +
+                    '  function jalankanCetak() { if (sudah) return; sudah = true; document.getElementById("btnCetakManual").style.display = "inline-flex"; setTimeout(function(){ window.print(); }, 250); }\n' +
+                    '  tile.on("load", jalankanCetak);\n' +
+                    '  setTimeout(jalankanCetak, 4000);\n' +
+                    '}\n' +
+                    'window.addEventListener("load", mulaiPeta);\n';
+            } else {
+                petaScriptBlock =
+                    'window.addEventListener("load", function() {\n' +
+                    '  document.getElementById("btnCetakManual").style.display = "inline-flex";\n' +
+                    '  setTimeout(function(){ window.print(); }, 250);\n' +
+                    '});\n';
+            }
+
+            return '<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8">' +
+                '<title>Cetak Laporan - Karimunku Terang</title>' +
+                (withMap ? '<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>' : '') +
+                '<style>' +
+                    // Aturan global: paksa SEMUA elemen mempertahankan warna latar & bayangan
+                    // saat dicetak/dijadikan PDF. Ini yang sebelumnya tertinggal saat arsitektur
+                    // cetak ditulis ulang -- tanpa ini, Chrome/Android secara default MEMBUANG
+                    // warna latar (background-color) saat cetak untuk hemat tinta, membuat
+                    // marker merah jadi putih/abu-abu begitu juga header tabel & judul bagian.
+                    '*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important;}' +
+                    'body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:0;padding:15mm;box-sizing:border-box;}' +
+                    '.judul-bagian{font-size:14px;font-weight:800;margin:18px 0 8px;}' +
+                    '.teks-biru{color:#2563eb;font-family:monospace;} .teks-biru-tebal{color:#2563eb;font-weight:800;}' +
+                    '.judul-material-baru{font-weight:800;font-size:12px;margin-bottom:6px;color:#000;}' +
+                    '#btnCetakManual{display:none;position:fixed;top:12px;right:12px;z-index:999;background:#2563eb;color:#fff;border:none;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);}' +
+                    '.kop-cetak{text-align:center;margin-bottom:16px;border-bottom:2px solid #000;padding-bottom:12px;}' +
+                    '.kop-cetak h1{font-size:20px;font-weight:900;margin:0 0 4px;text-transform:uppercase;}' +
+                    '.kop-cetak h2{font-size:15px;font-weight:700;margin:0 0 8px;text-transform:uppercase;}' +
+                    '.kop-cetak p{font-size:12px;font-weight:700;color:#1e3a8a;margin:0;}' +
+                    '.tabel-cetak{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed;}' +
+                    '.tabel-cetak th,.tabel-cetak td{border:1px solid #000;padding:6px;vertical-align:middle;word-wrap:break-word;}' +
+                    '.tabel-cetak th{background:#e5e7eb;font-weight:700;}' +
+                    '.laporan-page{font-family:Arial,Helvetica,sans-serif;box-sizing:border-box;width:100%;clear:both;padding-top:15mm;}' +
+                    '.laporan-header{text-align:center;margin-bottom:8px;} .laporan-header h1{font-size:22px;font-weight:900;margin:0 0 5px;letter-spacing:1px;} .laporan-header p{font-size:13px;margin:0;color:#374151;}' +
+                    '.laporan-divider{border-bottom:4px solid #000;margin-bottom:15px;}' +
+                    '.laporan-table{width:100%;border-collapse:collapse;margin-bottom:15px;font-size:12px;} .laporan-table td{border:1px solid #000;padding:8px 12px;} .laporan-table .col-label{font-weight:700;width:25%;background:#f9fafb;}' +
+                    '.laporan-section-title{background:#1a1a1a;color:#fff;font-weight:700;text-align:center;padding:8px;font-size:13px;margin-bottom:15px;}' +
+                    '.laporan-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px;}' +
+                    '.laporan-img-box{text-align:center;} .laporan-img-box p{font-weight:800;font-size:12px;margin-bottom:6px;color:#000;} .laporan-img-box img{width:100%;height:250px;object-fit:contain;border:1px solid #000;border-radius:4px;padding:2px;}' +
+                    '.laporan-img-box-center{text-align:center;width:50%;margin:0 auto;} .laporan-img-box-center img{width:100%;height:250px;object-fit:contain;border:1px solid #000;border-radius:4px;padding:2px;}' +
+                    '@media print{' +
+                        '@page{margin:0;size:A4 portrait;} body{padding:15mm;} #btnCetakManual{display:none !important;}' +
+                        'table{page-break-inside:auto;} tr{page-break-inside:avoid;break-inside:avoid;} thead{display:table-header-group;}' +
+                        '#petaCetak{page-break-inside:avoid;break-inside:avoid;}' +
+                        '.laporan-page{page-break-before:always;break-before:page;page-break-inside:avoid;break-inside:avoid;}' +
+                        '.laporan-grid,.laporan-img-box,.laporan-img-box-center{page-break-inside:avoid;break-inside:avoid;}' +
+                        (withMap && withTable ? '.tabel-cetak{page-break-before:always;break-before:page;}' : '') +
+                    '}' +
+                '</style></head><body>' +
+                '<button id="btnCetakManual" onclick="window.print()">Cetak Sekarang</button>' +
+                '<div class="kop-cetak"><h1>Tabel Rekapitulasi Pekerjaan PJU</h1><h2>Program &quot;Karimunku Terang&quot;</h2>' +
+                (filterText ? '<p>' + escapeHtml(filterText) + '</p>' : '') + '</div>' +
+                petaHtml + tabelHtml + fotoHtml +
+                '<script>' + petaScriptBlock + '<\/script>' +
+                '</body></html>';
         }
 
         window.executePrint = () => {
@@ -926,7 +1017,7 @@
             
             if(!withMap && !withTable && !withFoto) { showAlert('Peringatan', 'Pilih minimal satu opsi cetak.', true); return; }
             
-            // --- 1. FILTER DATA ABSOLUT (NOMOR URUT) ---
+            // --- 1. FILTER DATA BERDASARKAN NOMOR URUT ---
             let dataToPrint = [...dataLampuFiltered]; 
             if (startNoStr || endNoStr) {
                 const startNo = startNoStr ? parseInt(startNoStr) : Number.MIN_SAFE_INTEGER;
@@ -940,111 +1031,43 @@
                 if (dataToPrint.length === 0) { showAlert('Peringatan', `Tidak ada data ditemukan pada Nomor Urut ${startNo} - ${endNo}.`, true); return; }
             }
 
-            closePrintModal();
-            
-            // Tampilkan Toast Notifikasi (Tidak Menutupi Peta)
-            const loadingScreen = document.getElementById('printLoadingToast');
-            loadingScreen.classList.replace('hidden', 'flex'); 
-            
-            // --- 2. UBAH TAMPILAN WEB JADI TAMPILAN KERTAS (NUKE MODE) ---
-            const body = document.body;
-            body.classList.add('force-print-layout');
-            
-            if(!withMap) body.classList.add('print-map-hidden'); else body.classList.add('print-map-active');
-            if(!withTable) body.classList.add('print-table-hidden'); else body.classList.add('print-table-active');
-            
-            if (withTable) renderTable(dataToPrint);
-
-            // --- 3. UBAH UKURAN PETA FISIK AGAR SATELIT BISA MENGGAMBAR 100% ---
-            if(withMap) {
-                document.getElementById('mainMap').style.height = mapHeightOpt;
-            }
-            
-            document.getElementById('printHeader').classList.remove('hidden');
-            const rangeTextEl = document.getElementById('printDateRange');
-            if (startNoStr && endNoStr) { rangeTextEl.innerText = `Filter Cetak: Nomor Urut ${startNoStr} s/d ${endNoStr}`; rangeTextEl.classList.remove('hidden'); } 
-            else if (startNoStr) { rangeTextEl.innerText = `Filter Cetak: Mulai Nomor Urut ${startNoStr}`; rangeTextEl.classList.remove('hidden'); } 
-            else if (endNoStr) { rangeTextEl.innerText = `Filter Cetak: Hingga Nomor Urut ${endNoStr}`; rangeTextEl.classList.remove('hidden'); } 
-            else { rangeTextEl.classList.add('hidden'); rangeTextEl.innerText = ""; }
-
-            // --- 4. SIAPKAN HALAMAN FOTO ---
-            const printArea = document.getElementById('printArea');
-            printArea.innerHTML = '';
-            if (withFoto) {
-                body.classList.add('print-foto-active');
-                let reportsHTML = '';
-                const fallbackImg = 'https://placehold.co/400x300/e2e8f0/64748b?text=Tidak+Ada+Foto';
-                
-                dataToPrint.forEach((item) => {
-                    const clean = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-                    const getVal = (possibleKeys) => { 
-                        const cleanKeys = possibleKeys.map(clean);
-                        for(let k of Object.keys(item)) { if(item[k] && cleanKeys.includes(clean(k))) return item[k]; }
-                        return ''; 
-                    };
-                    const urlSeb = parseImageUrl(getVal(['fotoSebelum', 'Foto Sebelum', 'Sebelum'])) || fallbackImg; const urlPro = parseImageUrl(getVal(['fotoProses', 'Foto Proses', 'Pengerjaan', 'Proses'])) || fallbackImg;
-                    const urlSel = parseImageUrl(getVal(['fotoSelesai', 'Foto Selesai', 'Selesai'])) || fallbackImg; const urlBaru = parseImageUrl(getVal(['fotoBaru', 'Foto Lampu Baru', 'Lampu Baru', 'Foto Seri', 'Seri Lampu'])) || fallbackImg;
-                    const urlLama = parseImageUrl(getVal(['fotoLama', 'Foto Lampu Lama', 'Lampu Lama'])) || fallbackImg;
-                    let fmtWaktu = '-'; if (item.timestamp) { try { fmtWaktu = new Date(item.timestamp).toLocaleString('id-ID'); } catch(e) { fmtWaktu = item.timestamp; } }
-                    const lat = item.lat ? parseFloat(item.lat).toFixed(5) : '-'; const lng = item.lng ? parseFloat(item.lng).toFixed(5) : '-';
-                    
-                    reportsHTML += `
-                        <div class="laporan-page print-exact-color">
-                            <div class="laporan-header"><h1>LAPORAN PEKERJAAN PJU</h1><p>Sistem Informasi Pemeliharaan</p></div>
-                            <div class="laporan-divider"></div>
-                            <table class="laporan-table">
-                                <tbody>
-                                    <tr><td class="col-label">No Urut / ID Tiang</td><td><strong>No. ${item.nomorUrut || '-'}</strong> | SN: ${item.serialNumber || '-'} [Kec. ${item.kecamatan || '-'}]</td></tr>
-                                    <tr><td class="col-label">Waktu Pekerjaan</td><td>${fmtWaktu}</td></tr>
-                                    <tr><td class="col-label">Koordinat</td><td class="text-blue-600 font-mono">${lat}, ${lng}</td></tr>
-                                    <tr><td class="col-label">Material Diganti</td><td class="text-blue-600 font-bold">${item.jenisLampu || '-'}</td></tr>
-                                    <tr><td class="col-label">Catatan Teknis</td><td>${item.keterangan || '-'}</td></tr>
-                                </tbody>
-                            </table>
-                            <div class="laporan-section-title print-exact-color">DOKUMENTASI VISUAL</div>
-                            <div class="laporan-grid">
-                                <div class="laporan-img-box"><p>1. Kondisi Sebelum</p><img src="${urlSeb}" onerror="this.src='${fallbackImg}'"></div>
-                                <div class="laporan-img-box"><p>2. Sedang Dikerjakan</p><img src="${urlPro}" onerror="this.src='${fallbackImg}'"></div>
-                                <div class="laporan-img-box"><p>3. Kondisi Selesai (Menyala)</p><img src="${urlSel}" onerror="this.src='${fallbackImg}'"></div>
-                                <div class="laporan-img-box"><p>4. Barang Bekas/Rusak</p><img src="${urlLama}" onerror="this.src='${fallbackImg}'"></div>
-                            </div>
-                            <div class="laporan-img-box-center"><p style="font-weight: 800; font-size: 12px; margin-bottom: 6px; color: #000;">5. Material Baru</p><img src="${urlBaru}" onerror="this.src='${fallbackImg}'"></div>
-                        </div>`;
-                });
-                printArea.innerHTML = reportsHTML;
-            }
-
-            // --- 5. EKSEKUSI CETAK DENGAN JEDA WAKTU MAKSIMAL UNTUK LEAFLET ---
+            // --- 2. HITUNG POSISI MARKER (RING-CLUSTERING) DI HALAMAN INI DULU ---
+            // Supaya jendela cetak baru tinggal PAKAI hasil hitungnya, tanpa perlu
+            // menduplikasi logika pengelompokan/spiderfy di sana.
+            let titikPeta = [];
             if (withMap) {
-                unlockMap('mainMap');
-                
-                // Jeda 200ms agar browser punya waktu mengubah tinggi div (reflow px) sebelum Leaflet bekerja
-                setTimeout(() => {
-                    if (mainMap) {
-                        mainMap.invalidateSize(true); // Memaksa Leaflet melukis ulang di dimensi baru (maks 19cm)
-                        renderCustomMapMarkers(dataToPrint, mainMap, mainMapMarkers, true); // <--- Fitur Geser ke Kiri dieksekusi disini!
+                const points = [];
+                dataToPrint.forEach(item => {
+                    if (item.lat && item.lng) {
+                        const lat = parseFloat(item.lat), lng = parseFloat(item.lng);
+                        if (!isNaN(lat) && !isNaN(lng)) points.push({ item, lat, lng });
                     }
-                    
-                    // Tunggu 3.5 Detik agar satelit menyelesaikan antrian download gambar
-                    setTimeout(() => {
-                        loadingScreen.classList.replace('flex', 'hidden'); // Sembunyikan notif memuat
-                        setTimeout(() => {
-                            window.print(); // Buka jendela PDF/Printer
-                            restoreAfterPrint(); // Setelah ditutup, kembalikan UI normal
-                        }, 200); 
-                    }, 3500);
-                    
-                }, 200);
-                
-            } else {
-                setTimeout(() => {
-                    loadingScreen.classList.replace('flex', 'hidden');
-                    setTimeout(() => {
-                        window.print();
-                        restoreAfterPrint();
-                    }, 200);
-                }, 500);
+                });
+                if (mainMap && points.length > 0) {
+                    const daftarKlaster = kelompokkanTitikBerdekatan(points, mainMap);
+                    daftarKlaster.forEach(anggota => sebarkanKlasterMelingkar(points, anggota));
+                }
+                titikPeta = points.map(p => ({
+                    nomorUrut: p.item.nomorUrut || '',
+                    lat: p.lat, lng: p.lng,
+                    drawLat: (p.drawLat != null ? p.drawLat : p.lat),
+                    drawLng: (p.drawLng != null ? p.drawLng : p.lng),
+                    digeser: !!p.digeser
+                }));
             }
+
+            closePrintModal();
+
+            // --- 3. BANGUN DOKUMEN CETAK SEBAGAI JENDELA/TAB BARU YANG TERPISAH ---
+            const htmlCetak = buatDokumenCetak(dataToPrint, titikPeta, { withMap, withTable, withFoto, mapHeightOpt, startNoStr, endNoStr });
+            const jendelaCetak = window.open('', '_blank');
+            if (!jendelaCetak) {
+                showAlert('Peringatan', 'Jendela cetak diblokir oleh browser. Mohon izinkan pop-up untuk halaman ini, lalu coba lagi.', true);
+                return;
+            }
+            jendelaCetak.document.open();
+            jendelaCetak.document.write(htmlCetak);
+            jendelaCetak.document.close();
         };
 
         window.onload = () => { initMaps(); fetchData(); };
