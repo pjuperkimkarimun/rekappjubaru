@@ -20,6 +20,24 @@
         #customAlert { display: none; }
         #customAlert.active { display: flex; }
 
+        /* Sembunyikan kontrol Leaflet (pilihan peta dasar, skala, zoom) selama peta masih dalam mode
+           terkunci, supaya tampilannya bersih dan tombolnya tidak "tembus" diklik lewat overlay kunci.
+           Atribusi peta (hak cipta penyedia tile) sengaja tetap tampil. */
+        #mainMap.map-locked .leaflet-control-layers,
+        #mainMap.map-locked .leaflet-control-scale,
+        #mainMap.map-locked .leaflet-control-zoom,
+        #mapPicker.map-locked .leaflet-control-layers,
+        #mapPicker.map-locked .leaflet-control-scale,
+        #mapPicker.map-locked .leaflet-control-zoom { display: none !important; }
+
+        /* Animasi highlight singkat saat marker dituju lewat klik koordinat di tabel */
+        @keyframes pulseHighlight {
+            0%   { transform: scale(1); }
+            50%  { transform: scale(1.4); filter: drop-shadow(0 0 10px rgba(59,130,246,0.95)); }
+            100% { transform: scale(1); }
+        }
+        .marker-pulse-highlight { animation: pulseHighlight 0.6s ease-in-out 3; }
+
         /* Catatan arsitektur: halaman aplikasi ini TIDAK PERNAH dicetak secara langsung lagi.
            Tombol "Cetak Laporan" membuka JENDELA/TAB BARU yang isinya sudah 100% siap-cetak
            (dibangun oleh fungsi buatDokumenCetak() di kode JS bawah) -- lengkap dengan CSS
@@ -133,7 +151,7 @@
                                     <i class="fa-solid fa-hand-pointer text-3xl text-white mb-2 drop-shadow-md animate-bounce"></i>
                                     <span class="text-white font-semibold drop-shadow-md text-sm text-center px-4">Peta Dikunci Agar Tidak Mengganggu Scroll Layar HP.<br>Ketuk Disini Untuk Membuka Kunci.</span>
                                 </div>
-                                <div id="mapPicker" class="h-72 w-full z-0 relative bg-gray-200"></div>
+                                <div id="mapPicker" class="h-72 w-full z-0 relative bg-gray-200 map-locked"></div>
                             </div>
                             
                             <input type="url" id="linkMaps" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border bg-gray-50 text-blue-600 underline" placeholder="Link Google Maps (Otomatis Dibuat)" readonly>
@@ -242,9 +260,17 @@
             </div>
 
             <div id="mainMap-container" class="bg-white rounded-lg shadow-md p-4 mb-6 border border-gray-100 print-map-container">
-                <div class="flex justify-between items-center mb-4 no-print">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 no-print gap-3">
                     <h2 class="text-xl font-bold text-gray-700 flex items-center"><i class="fa-solid fa-map-location-dot text-blue-600 mr-2"></i>Peta Persebaran Pemasangan</h2>
-                    <span id="mapPointCount" class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full border border-blue-200 shadow-sm">0 Titik Ditampilkan</span>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span id="mapPointCount" class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full border border-blue-200 shadow-sm">0 Titik Ditampilkan</span>
+                        <button onclick="locateOnMainMap()" title="Temukan Lokasi Saya" class="bg-white hover:bg-blue-50 text-gray-700 hover:text-blue-600 border border-gray-300 w-8 h-8 rounded-full shadow-sm flex items-center justify-center transition">
+                            <i class="fa-solid fa-location-crosshairs text-sm"></i>
+                        </button>
+                        <button onclick="toggleMapFullscreen()" title="Perbesar Peta (Layar Penuh)" class="bg-white hover:bg-blue-50 text-gray-700 hover:text-blue-600 border border-gray-300 w-8 h-8 rounded-full shadow-sm flex items-center justify-center transition">
+                            <i class="fa-solid fa-expand text-sm"></i>
+                        </button>
+                    </div>
                 </div>
                 <!-- Tinggi bawaan layar 500px, saat diprint diganti jadi Pixels Absolute -->
                 <div id="mainMapWrapper" class="relative w-full rounded-lg overflow-hidden border border-gray-300 print-exact-color" style="height: 500px;">
@@ -252,7 +278,7 @@
                         <i class="fa-solid fa-hand-pointer text-4xl text-white mb-3 drop-shadow-lg animate-bounce"></i>
                         <span class="text-white font-bold drop-shadow-lg text-lg text-center px-4">Peta Dalam Mode Terkunci<br><span class="text-sm font-normal">Ketuk untuk Berinteraksi dengan Peta GIS</span></span>
                     </div>
-                    <div id="mainMap" class="w-full h-full z-0 relative bg-gray-100 print-exact-color"></div>
+                    <div id="mainMap" class="w-full h-full z-0 relative bg-gray-100 print-exact-color map-locked"></div>
                 </div>
             </div>
 
@@ -403,6 +429,15 @@
         </div>
     </div>
 
+    <!-- Overlay Peta Layar Penuh (Fitur Interaktif: Perbesar Peta) -->
+    <div id="mapFullscreenOverlay" class="hidden fixed inset-0 bg-white z-[80] flex flex-col no-print">
+        <div class="flex justify-between items-center px-4 py-3 border-b border-gray-200 bg-gray-50 shrink-0">
+            <span class="font-bold text-gray-700"><i class="fa-solid fa-map-location-dot text-blue-600 mr-2"></i>Peta Persebaran Pemasangan</span>
+            <button onclick="toggleMapFullscreen()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1.5 rounded text-sm font-medium transition"><i class="fa-solid fa-xmark mr-1"></i> Tutup</button>
+        </div>
+        <div id="mapFullscreenContent" class="flex-1 relative p-2 min-h-0"></div>
+    </div>
+
     <script>
         // === GANTI STRING DI BAWAH INI DENGAN URL WEB APP GOOGLE SCRIPT ANDA ===
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzZ0_I-J98SsuDBgXNOWb7v7zsJOeIyhyiBJyOE1aNjpFPWUkSl6k4pggjyEceiLC_2JQ/exec";
@@ -416,13 +451,21 @@
         const KARIMUN_CENTER = [0.9997, 103.4283]; 
         const ZOOM_LEVEL_KAB = 10;
         const ZOOM_LEVEL_DETAIL = 18;
+        const MAP_SCREEN_HEIGHT = '500px'; // tinggi peta rekap normal di layar (di luar mode layar penuh)
+        let markerLookupMain = {};         // "no:<nomor urut>" / "ll:<lat,lng>" -> marker di peta rekap (untuk klik koordinat di tabel)
+        let userLocationMarker = null;
+        let mapFullscreenActive = false;
+        let mainMapOriginalParent = null;
+        let mainMapOriginalNextSibling = null;
         // Lebar TETAP (piksel absolut) untuk peta di DOKUMEN CETAK (jendela baru). Nilai ini
         // SENGAJA piksel tetap (bukan %, bukan cm relatif) supaya lebar yang dipakai Leaflet
         // untuk menghitung fitBounds() SAMA PERSIS dengan lebar yang benar-benar dipakai saat
-        // dicetak -- akar perbaikan dari bug "titik terpotong / terdorong keluar area cetak"
-        // dari sebelumnya. 650px dipilih supaya muat nyaman di lebar kertas A4 (~680px
-        // setelah margin 15mm kiri-kanan).
-        const PRINT_MAP_WIDTH_PX = 650;
+        // dicetak. 630px muat di area isi A4 (170mm = ~642px setelah margin @page 20mm kiri-kanan).
+        const PRINT_MAP_WIDTH_PX = 630;
+        // Tinggi maksimum peta cetak (piksel). Area isi A4 setelah margin 20mm atas-bawah = 257mm
+        // (~971px); kop, judul bagian, dan catatan legenda memakai sekitar 190px, sehingga peta
+        // dibatasi agar SELALU muat di halaman pertama (tidak terlempar ke halaman berikutnya).
+        const TINGGI_PETA_MAKS_PX = 780;
 
         const showAlert = (title, message, isError = false) => {
             document.getElementById('alertTitle').innerText = title;
@@ -451,23 +494,107 @@
             if(tabName === 'rekap' && mainMap) setTimeout(() => { mainMap.invalidateSize(); renderMapMarkers(); }, 100);
         };
 
+        // === PETA DASAR (BASEMAP) ===
+        // Penyebab peta tampil "403 Access blocked ... osm.wiki/Blocked": OpenStreetMap kini MENOLAK
+        // permintaan tile tanpa header Referer -- halaman yang dibuka sebagai file lokal (file:// atau
+        // content:// di HP) tidak pernah mengirim Referer -- dan juga menolak alamat lama berawalan
+        // {s}. (a/b/c).tile.openstreetmap.org. Karena itu bawaan sekarang adalah peta jalan Esri
+        // (gratis, tanpa API key, tidak butuh Referer). OpenStreetMap (alamat baru + Referer) hanya
+        // ditawarkan bila halaman dibuka lewat http/https (mis. GitHub Pages). Bila satu peta dasar
+        // gagal dimuat total, aplikasi pindah otomatis ke cadangannya.
+        const WEB_ORIGIN = (typeof location !== 'undefined') && /^https?:$/.test(location.protocol);
+        const BASEMAPS = {
+            esri: { label: 'Jalan (Esri)', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', attribution: 'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, OpenStreetMap contributors, and the GIS User Community', maxZoom: 19 },
+            osm: { label: 'OpenStreetMap', url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors', maxZoom: 19, referrerPolicy: 'strict-origin-when-cross-origin' },
+            satelit: { label: 'Satelit (Esri)', url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community', maxZoom: 19 }
+        };
+        const CADANGAN_PETA_DASAR = { esri: 'osm', osm: 'esri', satelit: 'esri' };
+        const basemapAktif = { mapPicker: 'esri', mainMap: 'esri' }; // kunci peta dasar yang sedang tampil per peta
+        const daftarPetaDasar = () => (WEB_ORIGIN ? ['esri', 'osm', 'satelit'] : ['esri', 'satelit']);
+
+        // Memasang pilihan peta dasar + skala + pengawas kegagalan muat pada satu peta.
+        function pasangPetaDasar(mapInstance, mapId) {
+            const kunciList = daftarPetaDasar();
+            const lapisan = {}, pilihan = {};
+            kunciList.forEach(k => {
+                const b = BASEMAPS[k];
+                const opsi = { attribution: b.attribution, maxZoom: b.maxZoom };
+                if (b.referrerPolicy) opsi.referrerPolicy = b.referrerPolicy;
+                lapisan[k] = L.tileLayer(b.url, opsi);
+                pilihan[b.label] = lapisan[k];
+            });
+            const kunciDari = (lyr) => kunciList.find(k => lapisan[k] === lyr);
+
+            let aktif = 'esri', dimuat = 0, galat = 0, peralihan = 0, otomatis = false;
+
+            const tampilkanNotice = (teks) => {
+                const wadah = mapInstance.getContainer();
+                let n = wadah.querySelector('.peta-notice');
+                if (!n) {
+                    n = document.createElement('div');
+                    n.className = 'peta-notice';
+                    n.style.cssText = 'position:absolute;left:8px;right:8px;bottom:30px;z-index:1000;background:rgba(17,24,39,.88);color:#fff;font-size:12px;line-height:1.35;padding:8px 10px;border-radius:6px;text-align:center;pointer-events:none;';
+                    wadah.appendChild(n);
+                }
+                n.textContent = teks; n.style.display = 'block';
+                clearTimeout(n._t); n._t = setTimeout(() => { n.style.display = 'none'; }, 9000);
+            };
+
+            // Dipanggil bila peta dasar aktif GAGAL TOTAL (tidak ada satu pun tile berhasil, >= 4 galat).
+            const tanganiGagal = () => {
+                const target = CADANGAN_PETA_DASAR[aktif];
+                if (!target || !lapisan[target] || peralihan >= 2) {
+                    tampilkanNotice('Gambar dasar peta tidak berhasil dimuat. Periksa koneksi internet, lalu tekan "Segarkan Peta" atau pilih peta dasar lain (ikon lapisan di kanan atas peta).');
+                    galat = -1000000; // jangan ulangi pemberitahuan sampai ada pilihan baru / tile yang berhasil
+                    return;
+                }
+                peralihan++;
+                const dari = aktif;
+                otomatis = true;
+                mapInstance.removeLayer(lapisan[dari]);
+                mapInstance.addLayer(lapisan[target]);
+                otomatis = false;
+                tampilkanNotice('Peta "' + BASEMAPS[dari].label + '" gagal dimuat — dialihkan otomatis ke "' + BASEMAPS[target].label + '".');
+            };
+
+            kunciList.forEach(k => {
+                lapisan[k].on('tileload', () => { if (aktif === k) { dimuat++; peralihan = 0; } });
+                lapisan[k].on('tileerror', () => {
+                    if (aktif !== k) return;
+                    galat++;
+                    if (dimuat === 0 && galat >= 4) tanganiGagal();
+                });
+            });
+
+            L.control.layers(pilihan, {}, { position: 'topright' }).addTo(mapInstance);
+            L.control.scale({ metric: true, imperial: false, position: 'bottomleft' }).addTo(mapInstance);
+
+            mapInstance.on('baselayerchange', (e) => {
+                const k = kunciDari(e.layer);
+                if (!k) return;
+                aktif = k; dimuat = 0; galat = 0; basemapAktif[mapId] = k;
+                if (!otomatis) peralihan = 0; // pilihan manual pengguna -> hitungan peralihan otomatis mulai baru
+            });
+            lapisan[aktif].addTo(mapInstance);
+        }
+
         function initMaps() {
             mapPicker = L.map('mapPicker', { scrollWheelZoom: false, dragging: false, touchZoom: false, doubleClickZoom: false }).setView(KARIMUN_CENTER, ZOOM_LEVEL_KAB);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(mapPicker);
+            pasangPetaDasar(mapPicker, 'mapPicker');
             mapPicker.on('click', function(e) { updateLocationInput(e.latlng.lat, e.latlng.lng); });
 
             mainMap = L.map('mainMap', { scrollWheelZoom: false, dragging: false, touchZoom: false, doubleClickZoom: false }).setView(KARIMUN_CENTER, ZOOM_LEVEL_KAB);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(mainMap);
+            pasangPetaDasar(mainMap, 'mainMap');
         }
 
         window.unlockMap = (mapId) => {
-            if (mapId === 'mapPicker' && mapPicker) { mapPicker.dragging.enable(); mapPicker.touchZoom.enable(); mapPicker.scrollWheelZoom.enable(); mapPicker.doubleClickZoom.enable(); document.getElementById('overlayMapPicker').classList.add('hidden'); } 
-            else if (mapId === 'mainMap' && mainMap) { mainMap.dragging.enable(); mainMap.touchZoom.enable(); mainMap.scrollWheelZoom.enable(); mainMap.doubleClickZoom.enable(); document.getElementById('overlayMainMap').classList.add('hidden'); }
+            if (mapId === 'mapPicker' && mapPicker) { mapPicker.dragging.enable(); mapPicker.touchZoom.enable(); mapPicker.scrollWheelZoom.enable(); mapPicker.doubleClickZoom.enable(); document.getElementById('overlayMapPicker').classList.add('hidden'); document.getElementById('mapPicker').classList.remove('map-locked'); }
+            else if (mapId === 'mainMap' && mainMap) { mainMap.dragging.enable(); mainMap.touchZoom.enable(); mainMap.scrollWheelZoom.enable(); mainMap.doubleClickZoom.enable(); document.getElementById('overlayMainMap').classList.add('hidden'); document.getElementById('mainMap').classList.remove('map-locked'); }
         };
 
         function lockMap(mapId) {
-            if (mapId === 'mapPicker' && mapPicker) { mapPicker.dragging.disable(); mapPicker.touchZoom.disable(); mapPicker.scrollWheelZoom.disable(); mapPicker.doubleClickZoom.disable(); document.getElementById('overlayMapPicker').classList.remove('hidden'); } 
-            else if (mapId === 'mainMap' && mainMap) { mainMap.dragging.disable(); mainMap.touchZoom.disable(); mainMap.scrollWheelZoom.disable(); mainMap.doubleClickZoom.disable(); document.getElementById('overlayMainMap').classList.remove('hidden'); }
+            if (mapId === 'mapPicker' && mapPicker) { mapPicker.dragging.disable(); mapPicker.touchZoom.disable(); mapPicker.scrollWheelZoom.disable(); mapPicker.doubleClickZoom.disable(); document.getElementById('overlayMapPicker').classList.remove('hidden'); document.getElementById('mapPicker').classList.add('map-locked'); }
+            else if (mapId === 'mainMap' && mainMap) { mainMap.dragging.disable(); mainMap.touchZoom.disable(); mainMap.scrollWheelZoom.disable(); mainMap.doubleClickZoom.disable(); document.getElementById('overlayMainMap').classList.remove('hidden'); document.getElementById('mainMap').classList.add('map-locked'); }
         }
 
         function updateLocationInput(lat, lng) {
@@ -516,6 +643,76 @@
         };
 
         window.refreshMap = () => { if(mainMap) { mainMap.invalidateSize(); renderMapMarkers(); mainMap.setView(KARIMUN_CENTER, ZOOM_LEVEL_KAB); lockMap('mainMap'); } };
+
+        // --- INTERAKTIVITAS: lacak lokasi pengguna di peta rekap utama ---
+        window.locateOnMainMap = () => {
+            if (!navigator.geolocation) { showAlert('Error', 'Browser tidak mendukung GPS.', true); return; }
+            unlockMap('mainMap');
+            navigator.geolocation.getCurrentPosition((pos) => {
+                const { latitude, longitude } = pos.coords;
+                if (userLocationMarker) {
+                    userLocationMarker.setLatLng([latitude, longitude]);
+                } else {
+                    userLocationMarker = L.circleMarker([latitude, longitude], { radius: 8, color: '#fff', weight: 2, fillColor: '#3b82f6', fillOpacity: 1 }).addTo(mainMap).bindPopup('Lokasi Anda Saat Ini');
+                }
+                mainMap.flyTo([latitude, longitude], 17, { duration: 1 });
+            }, () => {
+                showAlert('Error Lokasi', 'Gagal mendapatkan lokasi GPS. Pastikan GPS & izin lokasi browser sudah aktif.', true);
+            }, { enableHighAccuracy: true, timeout: 10000 });
+        };
+
+        // --- INTERAKTIVITAS: klik koordinat di tabel -> langsung terbang ke titiknya di peta ---
+        window.flyToPoint = (lat, lng, nomor) => {
+            if (!mainMap) return;
+            unlockMap('mainMap');
+            const key = `${parseFloat(lat).toFixed(6)},${parseFloat(lng).toFixed(6)}`;
+            const target = markerLookupMain['no:' + nomor] || markerLookupMain['ll:' + key];
+            const tujuan = target ? target.getLatLng() : L.latLng(parseFloat(lat), parseFloat(lng));
+
+            mainMap.flyTo(tujuan, 18, { duration: 0.8 });
+            document.getElementById('mainMap-container').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            setTimeout(() => {
+                if (target) {
+                    target.openPopup();
+                    // Animasi dipasang pada lingkaran merah DI DALAM ikon (bukan pada elemen ikon Leaflet itu
+                    // sendiri, yang posisinya diatur lewat CSS transform dan akan "loncat" bila ditimpa animasi).
+                    const iconEl = target.getElement();
+                    const bulat = iconEl && (iconEl.firstElementChild || iconEl);
+                    if (bulat) {
+                        bulat.classList.add('marker-pulse-highlight');
+                        setTimeout(() => bulat.classList.remove('marker-pulse-highlight'), 1800);
+                    }
+                }
+            }, 850);
+        };
+
+        // --- INTERAKTIVITAS: perbesar peta rekap ke layar penuh ---
+        window.toggleMapFullscreen = () => {
+            const wrapper = document.getElementById('mainMapWrapper');
+            const overlay = document.getElementById('mapFullscreenOverlay');
+            const content = document.getElementById('mapFullscreenContent');
+            if (!wrapper || !overlay || !content) return;
+
+            if (!mapFullscreenActive) {
+                mainMapOriginalParent = wrapper.parentNode;
+                mainMapOriginalNextSibling = wrapper.nextSibling;
+                content.appendChild(wrapper);
+                wrapper.style.height = '100%';
+                overlay.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                mapFullscreenActive = true;
+                unlockMap('mainMap');
+            } else {
+                wrapper.style.height = MAP_SCREEN_HEIGHT;
+                if (mainMapOriginalNextSibling) mainMapOriginalParent.insertBefore(wrapper, mainMapOriginalNextSibling);
+                else mainMapOriginalParent.appendChild(wrapper);
+                overlay.classList.add('hidden');
+                document.body.style.overflow = '';
+                mapFullscreenActive = false;
+            }
+            setTimeout(() => { if (mainMap) mainMap.invalidateSize(); }, 150);
+        };
 
         function getBase64(file) {
             return new Promise((resolve, reject) => {
@@ -664,11 +861,18 @@
 
                 const dtFoto = encodeURIComponent(JSON.stringify({ seb: urlSeb, pro: urlPro, sel: urlSel, baru: urlBaru, lama: urlLama, ket: ketVal || 'Tidak ada keterangan.', title: `No Urut: ${item.nomorUrut || '-'} | SN: ${item.serialNumber || '-'}` }));
 
+                // Koordinat bisa diklik: peta rekap langsung terbang ke titik lampu itu.
+                const adaKoordinat = item.lat && item.lng && !isNaN(parseFloat(item.lat)) && !isNaN(parseFloat(item.lng));
+                const noAman = String(item.nomorUrut || '').replace(/[^0-9A-Za-z_-]/g, '');
+                const koordinatHtml = adaKoordinat
+                    ? `<div onclick="flyToPoint(${parseFloat(item.lat)}, ${parseFloat(item.lng)}, '${noAman}')" class="text-xs font-mono bg-gray-100 hover:bg-blue-100 hover:text-blue-700 px-2 py-1 rounded inline-block cursor-pointer transition border border-transparent hover:border-blue-300" title="Klik untuk lihat di peta"><i class="fa-solid fa-location-dot mr-1"></i>${parseFloat(item.lat).toFixed(5)}, ${parseFloat(item.lng).toFixed(5)}</div>`
+                    : `<div class="text-xs font-mono bg-gray-100 px-2 py-1 rounded inline-block">${item.lat ? parseFloat(item.lat).toFixed(5) : '-'}, ${item.lng ? parseFloat(item.lng).toFixed(5) : '-'}</div>`;
+
                 tr.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${item.nomorUrut || '-'}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm"><span class="px-2.5 py-1 rounded bg-indigo-100 text-indigo-800 font-bold">${item.kecamatan || '-'}</span></td>
                     <td class="px-6 py-4 text-sm font-bold">${item.jenisLampu || '-'}<br><span class="font-mono text-blue-600 font-normal">SN: ${item.serialNumber || '-'}</span></td>
-                    <td class="px-6 py-4 text-sm"><div class="text-xs font-mono bg-gray-100 px-2 py-1 rounded inline-block">${item.lat ? parseFloat(item.lat).toFixed(5) : '-'}, ${item.lng ? parseFloat(item.lng).toFixed(5) : '-'}</div><br><a href="${item.linkMaps || '#'}" target="_blank" class="text-blue-600 hover:underline text-xs no-print"><i class="fa-solid fa-map-location-dot"></i> Buka Maps</a></td>
+                    <td class="px-6 py-4 text-sm">${koordinatHtml}<br><a href="${item.linkMaps || '#'}" target="_blank" class="text-blue-600 hover:underline text-xs no-print"><i class="fa-solid fa-map-location-dot"></i> Buka Maps</a></td>
                     <td class="px-6 py-4 text-sm min-w-[150px]">${ketVal || '-'}</td>
                     <td class="px-6 py-4 text-center text-sm font-medium col-foto no-print">
                         <button onclick="bukaFotoModal('${dtFoto}')" class="btn-lihat text-white bg-blue-600 px-3 py-1.5 rounded w-full mb-2"><i class="fa-regular fa-image"></i> Lihat</button>
@@ -758,6 +962,8 @@
             const bounds = L.latLngBounds(); 
             let hasPoints = false;
 
+            if (mapInstance === mainMap) markerLookupMain = {};
+
             // 1. Kumpulkan titik dengan koordinat valid
             const points = [];
             dataArray.forEach(item => {
@@ -797,6 +1003,12 @@
                 bounds.extend([p.lat, p.lng]); 
                 bounds.extend([p.drawLat, p.drawLng]); 
                 hasPoints = true;
+
+                if (mapInstance === mainMap) {
+                    const noKunci = String(p.item.nomorUrut || '').replace(/[^0-9A-Za-z_-]/g, '');
+                    if (noKunci) markerLookupMain['no:' + noKunci] = marker;
+                    markerLookupMain['ll:' + p.lat.toFixed(6) + ',' + p.lng.toFixed(6)] = marker;
+                }
             });
             
             document.getElementById('mapPointCount').innerText = `${hasPoints ? dataArray.length : 0} Titik`;
@@ -840,17 +1052,286 @@
             return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         }
 
+        // --- PETA DASAR UNTUK DOKUMEN CETAK ---
+        // Pilihan peta dasar yang sedang dipakai di peta rekap dipakai lebih dulu, lalu cadangannya.
+        // (OpenStreetMap hanya disertakan bila halaman ini dibuka lewat http/https, karena OSM
+        // menolak permintaan tanpa Referer -- lihat catatan di atas BASEMAPS.)
+        function petaDasarUntukCetak(kunciDipilih) {
+            const urutan = [];
+            const tambah = (k) => { if (BASEMAPS[k] && !urutan.includes(k) && (k !== 'osm' || WEB_ORIGIN)) urutan.push(k); };
+            tambah(kunciDipilih || 'esri'); tambah('esri'); tambah('osm');
+            return urutan.map(k => ({
+                kunci: k, url: BASEMAPS[k].url, attribution: BASEMAPS[k].attribution,
+                maxZoom: BASEMAPS[k].maxZoom, referrerPolicy: BASEMAPS[k].referrerPolicy || ''
+            }));
+        }
+
+        // --- SKRIP YANG BERJALAN DI JENDELA CETAK (BUKAN di halaman aplikasi) ---
+        // Teks fungsi ini (toString) disisipkan ke dokumen cetak lalu dijalankan di sana, jadi
+        // semua yang dipakai HARUS berada di dalam fungsi ini (tidak boleh memanggil fungsi/variabel
+        // di luar). Tugasnya:
+        //  1. Menggambar peta (tile dari peta dasar pilihan, otomatis pindah ke cadangan bila gagal).
+        //  2. Memuat foto BERTAHAP (maks. 6 sekaligus) dan MENGULANG bila gagal, dengan alamat
+        //     cadangan Google Drive. Sebelumnya semua foto diunduh serentak dan dialog cetak dibuka
+        //     tanpa menunggu foto selesai -- akibatnya di laptop (dialog cetak langsung memotret
+        //     isi halaman) foto yang belum sempat selesai/ditolak server tercetak kosong.
+        //  3. Memanggil dialog cetak HANYA setelah peta dan semua foto selesai. Bila ada foto yang
+        //     tetap gagal, dialog TIDAK dibuka otomatis; pengguna melihat daftar foto yang gagal dan
+        //     memilih "Coba Lagi" atau "Cetak Sekarang".
+        function skripCetak(K) {
+            var MAKS_SERENTAK = 6;          // foto yang diunduh bersamaan
+            var MAKS_COBA = 5;              // percobaan per foto (bergantian antar alamat cadangan)
+            var BATAS_WAKTU_FOTO = 20000;   // ms: satu percobaan tanpa respons dianggap gagal
+            var BATAS_TOTAL_FOTO = 120000;  // ms: setelah ini sisa foto dianggap gagal & dilaporkan
+            var BATAS_PETA = 6000;          // ms: cetak tetap jalan walau peta tak kunjung 'load'
+
+            var $ = function (id) { return document.getElementById(id); };
+            var esc = function (s) {
+                return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            };
+            var svg = function (teks) {
+                return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">' +
+                    '<rect width="400" height="300" fill="#e2e8f0"/>' +
+                    '<text x="200" y="158" font-family="Arial,Helvetica,sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#64748b">' + teks + '</text></svg>');
+            };
+            var SVG_KOSONG = svg('Tidak Ada Foto');
+            var SVG_GAGAL = svg('Foto Gagal Dimuat');
+
+            var bilah = $('bilahCetak'), elStatus = $('statusCetak'), elInfo = $('infoCetak'), btnCoba = $('btnCoba');
+            var siapDom = false, sudahCetak = false;
+            var petaSelesai = !K.adaPeta;
+            var fotoSelesai = true;
+            var catatanPeta = '';
+            var items = [], kosong = [], antrian = [];
+            var sedangMuat = 0, nSelesai = 0, nBerhasil = 0, nGagal = 0, berhenti = false, timerTotal = null;
+
+            function cobaCetak() {
+                if (sudahCetak || !siapDom || !petaSelesai || !fotoSelesai || nGagal > 0) return;
+                sudahCetak = true;
+                perbaruiStatus();
+                setTimeout(function () { window.print(); }, 250);
+            }
+
+            // ---------- teks status di bilah atas (hanya tampil di layar, tidak ikut tercetak) ----------
+            function ringkas(arr) { // [{no, n}] -> "No. 1 (semua foto); No. 2 (foto 2, 4)"
+                var per = {}, urut = [], i, k;
+                for (i = 0; i < arr.length; i++) { k = arr[i].no; if (!per[k]) { per[k] = []; urut.push(k); } per[k].push(arr[i].n); }
+                var out = [];
+                for (i = 0; i < urut.length && i < 8; i++) {
+                    out.push('No. ' + urut[i] + (per[urut[i]].length >= 5 ? ' (semua foto)' : ' (foto ' + per[urut[i]].join(', ') + ')'));
+                }
+                if (urut.length > 8) out.push('dan ' + (urut.length - 8) + ' titik lainnya');
+                return out.join('; ');
+            }
+            function perbaruiStatus() {
+                if (!elStatus) return;
+                var total = items.length, baris = '', info = [];
+                if (!fotoSelesai) {
+                    baris = 'Memuat foto: ' + nSelesai + ' dari ' + total + ' selesai. Dialog cetak terbuka otomatis setelah semua foto termuat.';
+                    bilah.className = '';
+                } else if (nGagal > 0) {
+                    var gagalList = [];
+                    for (var i = 0; i < items.length; i++) if (items[i].status === 'gagal') gagalList.push(items[i]);
+                    baris = 'PERHATIAN: ' + nGagal + ' dari ' + total + ' foto gagal dimuat — ' + ringkas(gagalList) + '. ' +
+                        'Penyebab umum: file foto di Google Drive belum dibagikan ("Siapa saja yang memiliki link") atau koneksi internet terputus. ' +
+                        'Tekan "Coba Lagi" setelah diperbaiki, atau "Cetak Sekarang" untuk mencetak apa adanya (foto yang gagal tampil sebagai kotak abu-abu).';
+                    bilah.className = 'ada-gagal';
+                } else if (total > 0) {
+                    baris = 'Semua foto (' + total + ') berhasil dimuat. ' + (sudahCetak ? 'Dialog cetak dibuka; bila tidak muncul, tekan "Cetak Sekarang".' : 'Menyiapkan dialog cetak…');
+                    bilah.className = '';
+                } else {
+                    baris = sudahCetak ? 'Dokumen siap. Bila dialog cetak tidak muncul, tekan "Cetak Sekarang".' : 'Menyiapkan dokumen cetak…';
+                }
+                elStatus.textContent = baris;
+                if (kosong.length) info.push('Catatan: tidak ada tautan foto pada data untuk ' + ringkas(kosong) + ' (tercetak sebagai kotak "Tidak Ada Foto").');
+                if (catatanPeta) info.push(catatanPeta);
+                elInfo.textContent = info.join(' ');
+                if (btnCoba) btnCoba.style.display = (fotoSelesai && nGagal > 0) ? 'inline-flex' : 'none';
+            }
+
+            // ---------- foto ----------
+            function kandidat(u) {
+                var m = /^https:\/\/lh3\.googleusercontent\.com\/d\/([A-Za-z0-9_-]+)\/?$/.exec(u);
+                if (!m) return [u];
+                var id = m[1];
+                return [
+                    'https://lh3.googleusercontent.com/d/' + id + '=w1000',
+                    'https://lh3.googleusercontent.com/d/' + id,
+                    'https://drive.google.com/thumbnail?id=' + id + '&sz=w1000',
+                    'https://drive.google.com/uc?export=view&id=' + id
+                ];
+            }
+            function selesaiItem(it) {
+                sedangMuat--; nSelesai++;
+                if (nSelesai >= items.length) { akhiriFoto(); return; }
+                perbaruiStatus();
+                isiSlot();
+            }
+            function gagalkan(it) {
+                if (it.final) return;
+                it.final = true; it.status = 'gagal'; nGagal++;
+                it.img.onload = null; it.img.onerror = null;
+                it.img.src = SVG_GAGAL; it.img.className = 'siap';
+                selesaiItem(it);
+            }
+            function cobaMuat(it) {
+                var url = it.kand[it.coba % it.kand.length], img = it.img, selesai = false, tmo;
+                function akhir(ok) {
+                    if (selesai || it.final) return;
+                    selesai = true; clearTimeout(tmo);
+                    img.onload = null; img.onerror = null;
+                    if (ok) { it.final = true; it.status = 'ok'; nBerhasil++; img.className = 'siap'; selesaiItem(it); return; }
+                    it.coba++;
+                    // Bila belum ada satu pun foto berhasil dan sudah banyak yang gagal total (mis. offline),
+                    // jangan buang waktu: cukup 2 percobaan per foto.
+                    var batas = (nBerhasil === 0 && nGagal >= 6) ? 2 : MAKS_COBA;
+                    if (it.coba < batas && !berhenti) {
+                        setTimeout(function () { if (it.final) return; if (berhenti) gagalkan(it); else cobaMuat(it); }, 400 * it.coba + Math.random() * 400);
+                    } else {
+                        gagalkan(it);
+                    }
+                }
+                it.status = 'muat';
+                tmo = setTimeout(function () { akhir(false); }, BATAS_WAKTU_FOTO);
+                img.onload = function () { akhir(true); };
+                img.onerror = function () { akhir(false); };
+                img.src = url;
+            }
+            function isiSlot() {
+                while (!berhenti && sedangMuat < MAKS_SERENTAK && antrian.length) {
+                    var it = antrian.shift();
+                    sedangMuat++;
+                    cobaMuat(it);
+                }
+            }
+            function akhiriFoto() {
+                clearTimeout(timerTotal);
+                fotoSelesai = true;
+                perbaruiStatus();
+                cobaCetak();
+            }
+            function paksaSelesai() { // batas waktu total terlewati: sisa foto dianggap gagal
+                berhenti = true;
+                for (var i = 0; i < items.length; i++) {
+                    var it = items[i];
+                    if (!it.final) { if (it.status === 'antri') sedangMuat++; gagalkan(it); }
+                }
+            }
+            function mulaiFoto() {
+                var daftar = document.querySelectorAll('img[data-src], img[data-kosong]');
+                for (var i = 0; i < daftar.length; i++) {
+                    var img = daftar[i], no = img.getAttribute('data-no') || '?', n = img.getAttribute('data-n') || '?';
+                    if (img.getAttribute('data-kosong')) { img.src = SVG_KOSONG; img.className = 'siap'; kosong.push({ no: no, n: n }); continue; }
+                    var it = { img: img, kand: kandidat(img.getAttribute('data-src')), no: no, n: n, coba: 0, status: 'antri', final: false };
+                    items.push(it); antrian.push(it);
+                }
+                if (!items.length) return;
+                fotoSelesai = false;
+                timerTotal = setTimeout(paksaSelesai, BATAS_TOTAL_FOTO);
+                isiSlot();
+            }
+            if (btnCoba) btnCoba.onclick = function () { // ulangi hanya foto yang gagal
+                var ulang = [];
+                for (var i = 0; i < items.length; i++) if (items[i].status === 'gagal') ulang.push(items[i]);
+                if (!ulang.length) return;
+                berhenti = false; fotoSelesai = false;
+                for (var j = 0; j < ulang.length; j++) {
+                    ulang[j].final = false; ulang[j].status = 'antri'; ulang[j].coba = 0;
+                    nGagal--; nSelesai--; antrian.push(ulang[j]);
+                }
+                clearTimeout(timerTotal);
+                timerTotal = setTimeout(paksaSelesai, BATAS_TOTAL_FOTO);
+                perbaruiStatus();
+                isiSlot();
+            };
+
+            // ---------- peta ----------
+            function mulaiPeta() {
+                if (!K.adaPeta) return;
+                try {
+                    if (typeof L === 'undefined') throw new Error('pustaka peta tidak termuat');
+                    var peta = L.map('petaCetak', { zoomControl: false, attributionControl: true });
+                    var bounds = L.latLngBounds(), adaTitik = false;
+                    K.titik.forEach(function (p) {
+                        if (p.digeser) {
+                            L.circleMarker([p.lat, p.lng], { radius: 5, fillColor: '#000', color: '#fff', weight: 2, fillOpacity: 1 }).addTo(peta);
+                            L.polyline([[p.lat, p.lng], [p.drawLat, p.drawLng]], { color: '#000', weight: 1.5, dashArray: '3,4' }).addTo(peta);
+                        }
+                        var html = '<div style="background-color:#ef4444 !important;color:#fff !important;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white !important;box-shadow:0 3px 5px rgba(0,0,0,.5);-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;"><span style="font-size:13px;font-weight:900;text-shadow:1px 1px 2px rgba(0,0,0,.8);">' + esc(p.nomorUrut) + '</span></div>';
+                        var icon = L.divIcon({ html: html, className: '', iconSize: [30, 30], iconAnchor: [15, 15] });
+                        L.marker([p.drawLat, p.drawLng], { icon: icon }).addTo(peta);
+                        bounds.extend([p.lat, p.lng]); adaTitik = true;
+                    });
+                    if (adaTitik) peta.fitBounds(bounds, { padding: [25, 25], maxZoom: 18 }); else peta.setView(K.pusat, K.zoomKab);
+
+                    // Peta dasar: pakai yang pertama; bila tile-nya gagal total, pindah ke cadangan berikutnya.
+                    var idx = 0, lapisan = null, termuat = 0, galat = 0;
+                    var pasangDasar = function () {
+                        if (lapisan) peta.removeLayer(lapisan);
+                        var b = K.petaDasar[idx], opsi = { attribution: b.attribution, maxZoom: b.maxZoom };
+                        if (b.referrerPolicy) opsi.referrerPolicy = b.referrerPolicy;
+                        var lyr = L.tileLayer(b.url, opsi);
+                        lapisan = lyr; termuat = 0; galat = 0;
+                        lyr.on('tileload', function () { if (lapisan === lyr) termuat++; });
+                        lyr.on('tileerror', function () {
+                            if (lapisan !== lyr) return;
+                            galat++;
+                            if (termuat === 0 && galat >= 3 && idx < K.petaDasar.length - 1) { idx++; pasangDasar(); }
+                        });
+                        lyr.on('load', function () {
+                            if (lapisan !== lyr) return;
+                            if (termuat > 0 || idx >= K.petaDasar.length - 1) { petaSelesai = true; cobaCetak(); }
+                        });
+                        lyr.addTo(peta);
+                    };
+                    pasangDasar();
+                    setTimeout(function () {
+                        if (!petaSelesai && termuat === 0) { catatanPeta = 'Catatan: gambar dasar peta tidak berhasil dimuat (periksa koneksi internet); titik lampu tetap tercetak.'; }
+                        petaSelesai = true; perbaruiStatus(); cobaCetak();
+                    }, BATAS_PETA);
+                } catch (e) {
+                    catatanPeta = 'Catatan: peta tidak dapat ditampilkan (' + e.message + '). Periksa koneksi internet lalu coba cetak ulang.';
+                    petaSelesai = true;
+                }
+            }
+
+            mulaiFoto();
+            mulaiPeta();
+            perbaruiStatus();
+            window.addEventListener('load', function () { siapDom = true; cobaCetak(); });
+            if (document.readyState === 'complete') { siapDom = true; cobaCetak(); }
+        }
+
         // --- MEMBANGUN DOKUMEN CETAK SEBAGAI HTML MANDIRI (UNTUK JENDELA/TAB BARU) ---
-        // PERBAIKAN ARSITEKTUR UTAMA: dokumen ini 100% TERPISAH dari halaman aplikasi --
-        // hanya berisi kop laporan, peta (jika dipilih), tabel (jika dipilih), dan laporan
-        // foto (jika dipilih), memakai data yang SUDAH DIFILTER (dataToPrint). Tidak ada
-        // menu/tombol/tab aplikasi maupun data yang tidak dipilih yang ikut masuk ke sini
-        // sama sekali -- jadi tidak ada lagi yang perlu "disembunyikan" saat cetak, dan
-        // tidak ada lagi celah waktu (timer/'afterprint') yang bisa membuat konten yang
-        // salah ikut tercetak seperti yang berulang kali terjadi pada pendekatan sebelumnya.
+        // Dokumen ini 100% TERPISAH dari halaman aplikasi -- hanya berisi kop laporan, peta
+        // (jika dipilih), tabel (jika dipilih), dan laporan foto (jika dipilih), memakai data
+        // yang SUDAH DIFILTER (dataToPrint). Karena halaman aplikasi tidak disentuh sama sekali
+        // saat cetak, tidak ada lagi celah waktu (timer/'afterprint') yang bisa membuat konten
+        // yang salah ikut tercetak.
+        //
+        // ATURAN TATA LETAK CETAK (A4 portrait):
+        //  1. Margin kertas dipasang lewat @page (20mm di semua sisi). Berbeda dengan 'padding
+        //     body', margin @page DIULANG di SETIAP halaman -- sebelumnya hanya halaman pertama
+        //     yang punya margin atas, sehingga tabel di halaman 2 dst. menempel ke tepi kertas.
+        //  2. Satu titik lampu = satu lembar. Tiap '.laporan-page' diberi TINGGI TETAP yang lebih
+        //     pendek dari area isi halaman (250mm dari 257mm tersedia), dan area foto di dalamnya
+        //     mengisi SISA ruang (flex + grid 3 baris) -- jadi foto otomatis menyesuaikan, bukan
+        //     lagi tinggi piksel tetap yang bisa membuat foto ke-5 terlempar ke halaman berikutnya.
+        //  3. Kop 'Tabel Rekapitulasi' hanya muncul bila peta/tabel dicetak; laporan foto punya
+        //     kop sendiri di tiap lembar (tidak ada lagi halaman pembuka yang hampir kosong).
         function buatDokumenCetak(dataToPrint, titikPeta, opts) {
             const withMap = opts.withMap, withTable = opts.withTable, withFoto = opts.withFoto;
-            const mapHeightOpt = opts.mapHeightOpt, startNoStr = opts.startNoStr, endNoStr = opts.endNoStr;
+            const startNoStr = opts.startNoStr, endNoStr = opts.endNoStr;
+            const adaKontenAwal = withMap || withTable; // kop + peta/tabel yang mendahului laporan foto
+
+            // Tinggi peta dari pilihan pengguna (mis. "600px"), dibatasi agar selalu muat satu
+            // halaman bersama kop, judul, dan catatan legenda.
+            let tinggiPetaPx = parseInt(opts.mapHeightOpt, 10);
+            if (isNaN(tinggiPetaPx) || tinggiPetaPx < 200) tinggiPetaPx = 600;
+            if (tinggiPetaPx > TINGGI_PETA_MAKS_PX) tinggiPetaPx = TINGGI_PETA_MAKS_PX;
 
             let filterText = '';
             if (startNoStr && endNoStr) filterText = 'Filter Cetak: Nomor Urut ' + startNoStr + ' s/d ' + endNoStr;
@@ -872,136 +1353,150 @@
                         '<td>' + escapeHtml(item.keterangan || '-') + '</td>' +
                     '</tr>';
                 });
-                tabelHtml = '<h2 class="judul-bagian">Tabel Rekapitulasi (' + dataToPrint.length + ' Lampu)</h2>' +
-                    '<table class="tabel-cetak"><thead><tr><th>No</th><th>Kecamatan</th><th>Detail Lampu</th><th>Titik Koordinat</th><th>Keterangan</th></tr></thead>' +
-                    '<tbody>' + (baris || '<tr><td colspan="5" style="text-align:center;">Data kosong.</td></tr>') + '</tbody></table>';
+                // Judul + tabel dibungkus satu <section> supaya judul tidak tertinggal sendirian
+                // di halaman peta ketika tabel dipindah ke halaman baru.
+                tabelHtml = '<section class="bagian-tabel' + (withMap ? ' halaman-baru' : '') + '">' +
+                    '<h2 class="judul-bagian">Tabel Rekapitulasi (' + dataToPrint.length + ' Lampu)</h2>' +
+                    '<table class="tabel-cetak">' +
+                        '<colgroup><col style="width:8%"><col style="width:15%"><col style="width:27%"><col style="width:21%"><col style="width:29%"></colgroup>' +
+                        '<thead><tr><th>No</th><th>Kecamatan</th><th>Detail Lampu</th><th>Titik Koordinat</th><th>Keterangan</th></tr></thead>' +
+                        '<tbody>' + (baris || '<tr><td colspan="5" style="text-align:center;">Data kosong.</td></tr>') + '</tbody>' +
+                    '</table></section>';
             }
 
-            // --- LAPORAN FOTO ---
+            // --- LAPORAN FOTO (1 titik = 1 lembar) ---
+            // Setiap <img> di sini TIDAK langsung diberi src: alamatnya disimpan di data-src, lalu skrip di
+            // dokumen cetak (skripCetak) yang memuatnya bertahap, mengulang bila gagal, dan baru membuka
+            // dialog cetak setelah semuanya selesai. Foto yang memang kosong di data diberi data-kosong.
             let fotoHtml = '';
             if (withFoto) {
-                const fallbackImg = 'https://placehold.co/400x300/e2e8f0/64748b?text=Tidak+Ada+Foto';
-                dataToPrint.forEach((item) => {
+                const imgTag = (url, noUrut, urutFoto) => url
+                    ? '<img data-src="' + escapeHtml(url) + '" data-no="' + escapeHtml(noUrut) + '" data-n="' + urutFoto + '" referrerpolicy="no-referrer" alt="">'
+                    : '<img data-kosong="1" data-no="' + escapeHtml(noUrut) + '" data-n="' + urutFoto + '" alt="">';
+                dataToPrint.forEach((item, idx) => {
                     const clean = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
                     const getVal = (possibleKeys) => {
                         const cleanKeys = possibleKeys.map(clean);
                         for (let k of Object.keys(item)) { if (item[k] && cleanKeys.includes(clean(k))) return item[k]; }
                         return '';
                     };
-                    const urlSeb = parseImageUrl(getVal(['fotoSebelum', 'Foto Sebelum', 'Sebelum'])) || fallbackImg;
-                    const urlPro = parseImageUrl(getVal(['fotoProses', 'Foto Proses', 'Pengerjaan', 'Proses'])) || fallbackImg;
-                    const urlSel = parseImageUrl(getVal(['fotoSelesai', 'Foto Selesai', 'Selesai'])) || fallbackImg;
-                    const urlBaru = parseImageUrl(getVal(['fotoBaru', 'Foto Lampu Baru', 'Lampu Baru', 'Foto Seri', 'Seri Lampu'])) || fallbackImg;
-                    const urlLama = parseImageUrl(getVal(['fotoLama', 'Foto Lampu Lama', 'Lampu Lama'])) || fallbackImg;
+                    const urlSeb = parseImageUrl(getVal(['fotoSebelum', 'Foto Sebelum', 'Sebelum']));
+                    const urlPro = parseImageUrl(getVal(['fotoProses', 'Foto Proses', 'Pengerjaan', 'Proses']));
+                    const urlSel = parseImageUrl(getVal(['fotoSelesai', 'Foto Selesai', 'Selesai']));
+                    const urlBaru = parseImageUrl(getVal(['fotoBaru', 'Foto Lampu Baru', 'Lampu Baru', 'Foto Seri', 'Seri Lampu']));
+                    const urlLama = parseImageUrl(getVal(['fotoLama', 'Foto Lampu Lama', 'Lampu Lama']));
+                    const no = item.nomorUrut || '-';
                     let fmtWaktu = '-';
                     if (item.timestamp) { try { fmtWaktu = new Date(item.timestamp).toLocaleString('id-ID'); } catch (e) { fmtWaktu = item.timestamp; } }
                     const lat = item.lat ? parseFloat(item.lat).toFixed(5) : '-';
                     const lng = item.lng ? parseFloat(item.lng).toFixed(5) : '-';
 
-                    fotoHtml += '<div class="laporan-page">' +
+                    // Lembar pertama hanya perlu pindah halaman bila ada kop/peta/tabel di depannya.
+                    const kelasLembar = 'laporan-page' + ((idx > 0 || adaKontenAwal) ? ' halaman-baru' : '');
+                    fotoHtml += '<div class="' + kelasLembar + '">' +
                         '<div class="laporan-header"><h1>LAPORAN PEKERJAAN PJU</h1><p>Sistem Informasi Pemeliharaan</p></div>' +
                         '<div class="laporan-divider"></div>' +
                         '<table class="laporan-table"><tbody>' +
-                            '<tr><td class="col-label">No Urut / ID Tiang</td><td><strong>No. ' + escapeHtml(item.nomorUrut || '-') + '</strong> | SN: ' + escapeHtml(item.serialNumber || '-') + ' [Kec. ' + escapeHtml(item.kecamatan || '-') + ']</td></tr>' +
+                            '<tr><td class="col-label">No Urut / ID Tiang</td><td><strong>No. ' + escapeHtml(no) + '</strong> | SN: ' + escapeHtml(item.serialNumber || '-') + ' [Kec. ' + escapeHtml(item.kecamatan || '-') + ']</td></tr>' +
                             '<tr><td class="col-label">Waktu Pekerjaan</td><td>' + escapeHtml(fmtWaktu) + '</td></tr>' +
                             '<tr><td class="col-label">Koordinat</td><td class="teks-biru">' + lat + ', ' + lng + '</td></tr>' +
                             '<tr><td class="col-label">Material Diganti</td><td class="teks-biru-tebal">' + escapeHtml(item.jenisLampu || '-') + '</td></tr>' +
                             '<tr><td class="col-label">Catatan Teknis</td><td>' + escapeHtml(item.keterangan || '-') + '</td></tr>' +
                         '</tbody></table>' +
                         '<div class="laporan-section-title">DOKUMENTASI VISUAL</div>' +
-                        '<div class="laporan-grid">' +
-                            '<div class="laporan-img-box"><p>1. Kondisi Sebelum</p><img src="' + urlSeb + '" onerror="this.src=\'' + fallbackImg + '\'"></div>' +
-                            '<div class="laporan-img-box"><p>2. Sedang Dikerjakan</p><img src="' + urlPro + '" onerror="this.src=\'' + fallbackImg + '\'"></div>' +
-                            '<div class="laporan-img-box"><p>3. Kondisi Selesai (Menyala)</p><img src="' + urlSel + '" onerror="this.src=\'' + fallbackImg + '\'"></div>' +
-                            '<div class="laporan-img-box"><p>4. Barang Bekas/Rusak</p><img src="' + urlLama + '" onerror="this.src=\'' + fallbackImg + '\'"></div>' +
+                        '<div class="laporan-foto">' +
+                            '<div class="foto-box"><p>1. Kondisi Sebelum</p><div class="foto-bingkai">' + imgTag(urlSeb, no, 1) + '</div></div>' +
+                            '<div class="foto-box"><p>2. Sedang Dikerjakan</p><div class="foto-bingkai">' + imgTag(urlPro, no, 2) + '</div></div>' +
+                            '<div class="foto-box"><p>3. Kondisi Selesai (Menyala)</p><div class="foto-bingkai">' + imgTag(urlSel, no, 3) + '</div></div>' +
+                            '<div class="foto-box"><p>4. Barang Bekas/Rusak</p><div class="foto-bingkai">' + imgTag(urlLama, no, 4) + '</div></div>' +
+                            '<div class="foto-box foto-baru"><p>5. Material Baru</p><div class="foto-bingkai">' + imgTag(urlBaru, no, 5) + '</div></div>' +
                         '</div>' +
-                        '<div class="laporan-img-box-center"><p class="judul-material-baru">5. Material Baru</p><img src="' + urlBaru + '" onerror="this.src=\'' + fallbackImg + '\'"></div>' +
                     '</div>';
                 });
             }
 
-            // --- PETA (skrip Leaflet mandiri, dijalankan di jendela baru ini sendiri) ---
+            // --- PETA ---
             let petaHtml = '';
-            let petaScriptBlock = '';
             if (withMap) {
-                petaHtml = '<h2 class="judul-bagian">Peta Persebaran (' + titikPeta.length + ' Titik)</h2>' +
-                    '<div id="petaCetak" style="width:' + PRINT_MAP_WIDTH_PX + 'px;height:' + mapHeightOpt + ';border:2px solid #000;"></div>';
-
-                petaScriptBlock =
-                    'var TITIK = ' + JSON.stringify(titikPeta) + ';\n' +
-                    'var PUSAT = [' + KARIMUN_CENTER[0] + ',' + KARIMUN_CENTER[1] + '];\n' +
-                    'function mulaiPeta() {\n' +
-                    '  var map = L.map("petaCetak", { zoomControl: false, attributionControl: true });\n' +
-                    '  var tile = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap", maxZoom: 19 }).addTo(map);\n' +
-                    '  var bounds = L.latLngBounds(); var adaTitik = false;\n' +
-                    '  TITIK.forEach(function(p) {\n' +
-                    '    if (p.digeser) {\n' +
-                    '      L.circleMarker([p.lat, p.lng], { radius: 5, fillColor: "#000", color: "#fff", weight: 2, fillOpacity: 1 }).addTo(map);\n' +
-                    '      L.polyline([[p.lat, p.lng],[p.drawLat, p.drawLng]], { color: "#000", weight: 1.5, dashArray: "3,4" }).addTo(map);\n' +
-                    '    }\n' +
-                    '    var html = \'<div style="background-color:#ef4444 !important;color:#fff !important;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white !important;box-shadow:0 3px 5px rgba(0,0,0,.5);-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;"><span style="font-size:13px;font-weight:900;text-shadow:1px 1px 2px rgba(0,0,0,.8);">\' + (p.nomorUrut||"") + \'</span></div>\';\n' +
-                    '    var icon = L.divIcon({ html: html, className: "", iconSize: [30,30], iconAnchor: [15,15] });\n' +
-                    '    L.marker([p.drawLat, p.drawLng], { icon: icon }).addTo(map);\n' +
-                    '    bounds.extend([p.lat, p.lng]); adaTitik = true;\n' +
-                    '  });\n' +
-                    '  if (adaTitik) map.fitBounds(bounds, { padding: [25,25], maxZoom: 18 }); else map.setView(PUSAT, ' + ZOOM_LEVEL_KAB + ');\n' +
-                    '  var sudah = false;\n' +
-                    '  function jalankanCetak() { if (sudah) return; sudah = true; document.getElementById("btnCetakManual").style.display = "inline-flex"; setTimeout(function(){ window.print(); }, 250); }\n' +
-                    '  tile.on("load", jalankanCetak);\n' +
-                    '  setTimeout(jalankanCetak, 4000);\n' +
-                    '}\n' +
-                    'window.addEventListener("load", mulaiPeta);\n';
-            } else {
-                petaScriptBlock =
-                    'window.addEventListener("load", function() {\n' +
-                    '  document.getElementById("btnCetakManual").style.display = "inline-flex";\n' +
-                    '  setTimeout(function(){ window.print(); }, 250);\n' +
-                    '});\n';
+                const adaGeseran = titikPeta.some(p => p.digeser);
+                petaHtml = '<section class="bagian-peta">' +
+                    '<h2 class="judul-bagian">Peta Persebaran (' + titikPeta.length + ' Titik)</h2>' +
+                    '<div id="petaCetak" style="width:' + PRINT_MAP_WIDTH_PX + 'px;height:' + tinggiPetaPx + 'px;border:2px solid #000;"></div>' +
+                    (adaGeseran ? '<p class="catatan-peta">Marker dengan garis putus-putus berarti ada beberapa lampu yang lokasinya sangat berdekatan &mdash; posisinya sedikit digeser agar nomornya tetap terbaca jelas, sedangkan titik hitam kecil menunjukkan koordinat aslinya.</p>' : '') +
+                    '</section>';
             }
+
+            // Konfigurasi untuk skripCetak (di-JSON-kan; '<' di-escape supaya aman di dalam <script>).
+            const konfigurasi = {
+                adaPeta: !!withMap,
+                adaFoto: !!(withFoto && dataToPrint.length > 0),
+                titik: titikPeta,
+                pusat: KARIMUN_CENTER,
+                zoomKab: ZOOM_LEVEL_KAB,
+                petaDasar: opts.petaDasar || petaDasarUntukCetak('esri')
+            };
+            const petaScriptBlock = '(' + skripCetak.toString() + ')(' + JSON.stringify(konfigurasi).replace(/</g, '\\u003c') + ');';
+
+            const kopHtml = adaKontenAwal
+                ? '<div class="kop-cetak"><h1>Tabel Rekapitulasi Pekerjaan PJU</h1><h2>Program &quot;Karimunku Terang&quot;</h2>' +
+                    (filterText ? '<p>' + escapeHtml(filterText) + '</p>' : '') + '</div>'
+                : '';
 
             return '<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8">' +
                 '<title>Cetak Laporan - Karimunku Terang</title>' +
                 (withMap ? '<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>' : '') +
                 '<style>' +
-                    // Aturan global: paksa SEMUA elemen mempertahankan warna latar & bayangan
-                    // saat dicetak/dijadikan PDF. Ini yang sebelumnya tertinggal saat arsitektur
-                    // cetak ditulis ulang -- tanpa ini, Chrome/Android secara default MEMBUANG
-                    // warna latar (background-color) saat cetak untuk hemat tinta, membuat
-                    // marker merah jadi putih/abu-abu begitu juga header tabel & judul bagian.
+                    // Paksa SEMUA elemen mempertahankan warna latar & bayangan saat dicetak/PDF
+                    // (default Chrome/Android membuang warna latar untuk hemat tinta).
                     '*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;color-adjust:exact !important;}' +
-                    'body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:0;padding:15mm;box-sizing:border-box;}' +
-                    '.judul-bagian{font-size:14px;font-weight:800;margin:18px 0 8px;}' +
+                    // Margin kertas: @page (berulang di SETIAP halaman). Padding body hanya untuk tampilan layar.
+                    '@page{size:A4 portrait;margin:20mm;}' +
+                    'html,body{margin:0;padding:0;}' +
+                    'body{font-family:Arial,Helvetica,sans-serif;color:#111;}' +
+                    '@media screen{body{padding:20mm;}}' +
+                    '.judul-bagian{font-size:14px;font-weight:800;margin:18px 0 8px;break-after:avoid;page-break-after:avoid;}' +
                     '.teks-biru{color:#2563eb;font-family:monospace;} .teks-biru-tebal{color:#2563eb;font-weight:800;}' +
-                    '.judul-material-baru{font-weight:800;font-size:12px;margin-bottom:6px;color:#000;}' +
-                    '#btnCetakManual{display:none;position:fixed;top:12px;right:12px;z-index:999;background:#2563eb;color:#fff;border:none;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);}' +
+                    // Bilah status di atas dokumen (hanya di layar): kemajuan pemuatan foto + tombol cetak
+                    '#bilahCetak{position:sticky;top:0;z-index:999;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin:0 0 14px;padding:10px 12px;background:#eff6ff;border:1px solid #93c5fd;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.15);font:13px/1.4 Arial,Helvetica,sans-serif;color:#1e3a8a;}' +
+                    '#bilahCetak.ada-gagal{background:#fef2f2;border-color:#fca5a5;color:#7f1d1d;}' +
+                    '#bilahCetak .teks{flex:1 1 240px;min-width:0;} #infoCetak{margin-top:3px;font-size:12px;opacity:.85;} #infoCetak:empty{display:none;}' +
+                    '#bilahCetak button{border:none;padding:9px 14px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;align-items:center;}' +
+                    '#btnCetakManual{background:#2563eb;color:#fff;} #btnCoba{display:none;background:#fff;color:#991b1b;border:1px solid #fca5a5 !important;}' +
+                    '.halaman-baru{break-before:page;page-break-before:always;}' +
+                    // Kop, peta
                     '.kop-cetak{text-align:center;margin-bottom:16px;border-bottom:2px solid #000;padding-bottom:12px;}' +
                     '.kop-cetak h1{font-size:20px;font-weight:900;margin:0 0 4px;text-transform:uppercase;}' +
                     '.kop-cetak h2{font-size:15px;font-weight:700;margin:0 0 8px;text-transform:uppercase;}' +
                     '.kop-cetak p{font-size:12px;font-weight:700;color:#1e3a8a;margin:0;}' +
+                    '.bagian-peta{break-inside:avoid;page-break-inside:avoid;}' +
+                    '#petaCetak{box-sizing:border-box;}' +
+                    '.catatan-peta{font-size:10px;color:#374151;margin:6px 0 0;line-height:1.35;}' +
+                    // Tabel rekapitulasi (judul kolom diulang di tiap halaman, baris tidak terpotong)
                     '.tabel-cetak{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed;}' +
                     '.tabel-cetak th,.tabel-cetak td{border:1px solid #000;padding:6px;vertical-align:middle;word-wrap:break-word;}' +
                     '.tabel-cetak th{background:#e5e7eb;font-weight:700;}' +
-                    '.laporan-page{font-family:Arial,Helvetica,sans-serif;box-sizing:border-box;width:100%;clear:both;padding-top:15mm;}' +
-                    '.laporan-header{text-align:center;margin-bottom:8px;} .laporan-header h1{font-size:22px;font-weight:900;margin:0 0 5px;letter-spacing:1px;} .laporan-header p{font-size:13px;margin:0;color:#374151;}' +
-                    '.laporan-divider{border-bottom:4px solid #000;margin-bottom:15px;}' +
-                    '.laporan-table{width:100%;border-collapse:collapse;margin-bottom:15px;font-size:12px;} .laporan-table td{border:1px solid #000;padding:8px 12px;} .laporan-table .col-label{font-weight:700;width:25%;background:#f9fafb;}' +
-                    '.laporan-section-title{background:#1a1a1a;color:#fff;font-weight:700;text-align:center;padding:8px;font-size:13px;margin-bottom:15px;}' +
-                    '.laporan-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px;}' +
-                    '.laporan-img-box{text-align:center;} .laporan-img-box p{font-weight:800;font-size:12px;margin-bottom:6px;color:#000;} .laporan-img-box img{width:100%;height:250px;object-fit:contain;border:1px solid #000;border-radius:4px;padding:2px;}' +
-                    '.laporan-img-box-center{text-align:center;width:50%;margin:0 auto;} .laporan-img-box-center img{width:100%;height:250px;object-fit:contain;border:1px solid #000;border-radius:4px;padding:2px;}' +
-                    '@media print{' +
-                        '@page{margin:0;size:A4 portrait;} body{padding:15mm;} #btnCetakManual{display:none !important;}' +
-                        'table{page-break-inside:auto;} tr{page-break-inside:avoid;break-inside:avoid;} thead{display:table-header-group;}' +
-                        '#petaCetak{page-break-inside:avoid;break-inside:avoid;}' +
-                        '.laporan-page{page-break-before:always;break-before:page;page-break-inside:avoid;break-inside:avoid;}' +
-                        '.laporan-grid,.laporan-img-box,.laporan-img-box-center{page-break-inside:avoid;break-inside:avoid;}' +
-                        (withMap && withTable ? '.tabel-cetak{page-break-before:always;break-before:page;}' : '') +
-                    '}' +
+                    '.tabel-cetak thead{display:table-header-group;} .tabel-cetak tr{break-inside:avoid;page-break-inside:avoid;}' +
+                    // Laporan foto: satu lembar = tinggi tetap (<= area isi A4), foto mengisi sisa ruang
+                    '.laporan-page{box-sizing:border-box;width:100%;height:250mm;overflow:hidden;display:flex;flex-direction:column;break-inside:avoid;page-break-inside:avoid;font-family:Arial,Helvetica,sans-serif;}' +
+                    '.laporan-header{flex:0 0 auto;text-align:center;margin:0 0 6px;} .laporan-header h1{font-size:21px;font-weight:900;margin:0 0 3px;letter-spacing:1px;line-height:1.2;} .laporan-header p{font-size:12px;margin:0;color:#374151;line-height:1.2;}' +
+                    '.laporan-divider{flex:0 0 auto;border-bottom:3px solid #000;margin:0 0 10px;}' +
+                    '.laporan-table{flex:0 0 auto;width:100%;border-collapse:collapse;table-layout:fixed;margin:0 0 10px;font-size:12px;} .laporan-table td{border:1px solid #000;padding:5px 10px;line-height:1.25;word-break:break-word;} .laporan-table .col-label{font-weight:700;width:25%;background:#f9fafb;}' +
+                    '.laporan-section-title{flex:0 0 auto;background:#1a1a1a;color:#fff;font-weight:700;text-align:center;padding:5px;font-size:12px;margin:0 0 8px;}' +
+                    '.laporan-foto{flex:1 1 0;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:repeat(3,minmax(0,1fr));gap:6px 12px;}' +
+                    '.foto-box{display:flex;flex-direction:column;min-width:0;min-height:0;}' +
+                    '.foto-box p{flex:0 0 auto;margin:0 0 3px;font-size:11.5px;font-weight:800;line-height:1.2;text-align:center;color:#000;}' +
+                    '.foto-bingkai{position:relative;flex:1 1 0;min-height:0;border:1px solid #000;border-radius:4px;background:#fff;}' +
+                    // Foto baru tampil (class 'siap') setelah selesai dimuat -- selama belum, kotaknya kosong
+                    // (bukan ikon "gambar rusak") sehingga bila dicetak lebih awal pun tetap rapi.
+                    '.foto-bingkai img{position:absolute;left:2px;top:2px;width:calc(100% - 4px);height:calc(100% - 4px);object-fit:contain;visibility:hidden;}' +
+                    '.foto-bingkai img.siap{visibility:visible;}' +
+                    '.foto-baru{grid-column:1 / -1;justify-self:center;width:calc(50% - 6px);}' +
+                    '@media print{body{padding:0;} #bilahCetak{display:none !important;} .laporan-page{height:min(250mm,calc(100vh - 6mm));}}' +
                 '</style></head><body>' +
-                '<button id="btnCetakManual" onclick="window.print()">Cetak Sekarang</button>' +
-                '<div class="kop-cetak"><h1>Tabel Rekapitulasi Pekerjaan PJU</h1><h2>Program &quot;Karimunku Terang&quot;</h2>' +
-                (filterText ? '<p>' + escapeHtml(filterText) + '</p>' : '') + '</div>' +
-                petaHtml + tabelHtml + fotoHtml +
+                '<div id="bilahCetak"><div class="teks"><div id="statusCetak">Menyiapkan dokumen cetak&hellip;</div><div id="infoCetak"></div></div>' +
+                    '<button id="btnCoba" type="button">Coba Lagi Foto</button>' +
+                    '<button id="btnCetakManual" type="button" onclick="window.print()">Cetak Sekarang</button></div>' +
+                kopHtml + petaHtml + tabelHtml + fotoHtml +
                 '<script>' + petaScriptBlock + '<\/script>' +
                 '</body></html>';
         }
@@ -1059,7 +1554,7 @@
             closePrintModal();
 
             // --- 3. BANGUN DOKUMEN CETAK SEBAGAI JENDELA/TAB BARU YANG TERPISAH ---
-            const htmlCetak = buatDokumenCetak(dataToPrint, titikPeta, { withMap, withTable, withFoto, mapHeightOpt, startNoStr, endNoStr });
+            const htmlCetak = buatDokumenCetak(dataToPrint, titikPeta, { withMap, withTable, withFoto, mapHeightOpt, startNoStr, endNoStr, petaDasar: petaDasarUntukCetak(basemapAktif.mainMap) });
             const jendelaCetak = window.open('', '_blank');
             if (!jendelaCetak) {
                 showAlert('Peringatan', 'Jendela cetak diblokir oleh browser. Mohon izinkan pop-up untuk halaman ini, lalu coba lagi.', true);
