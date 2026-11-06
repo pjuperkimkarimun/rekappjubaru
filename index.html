@@ -344,7 +344,7 @@
 
             <!-- Opsi Bagian Laporan -->
             <span class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">3. Bagian yang Dicetak:</span>
-            <div class="space-y-2 mb-6">
+            <div class="space-y-2 mb-4">
                 <label class="flex items-center p-2 border rounded cursor-pointer hover:bg-gray-50 transition">
                     <input type="checkbox" id="printOptMap" checked class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
                     <div class="ml-3"><span class="block text-sm font-medium text-gray-900">Peta Persebaran</span></div>
@@ -354,14 +354,25 @@
                     <div class="ml-3"><span class="block text-sm font-medium text-gray-900">Tabel Rekapitulasi</span></div>
                 </label>
                 <label class="flex items-center p-2 border rounded cursor-pointer hover:bg-gray-50 transition bg-green-50 border-green-200">
-                    <input type="checkbox" id="printOptFoto" checked class="w-4 h-4 text-green-600 rounded border-gray-300 focus:ring-green-500">
+                    <input type="checkbox" id="printOptFoto" checked onchange="document.getElementById('printFotoUkuran').disabled = !this.checked;" class="w-4 h-4 text-green-600 rounded border-gray-300 focus:ring-green-500">
                     <div class="ml-3">
                         <span class="block text-sm font-bold text-gray-900">Laporan Detail 5 Foto</span>
-                        <span class="block text-[10px] text-gray-600 leading-tight">Format 1 tiang = 1 lembar penuh.</span>
+                        <span class="block text-[10px] text-gray-600 leading-tight">Data + 5 foto (sebelum, proses, selesai, bekas, baru) untuk setiap tiang.</span>
                     </div>
                 </label>
             </div>
-            
+
+            <!-- Opsi Ukuran Foto Laporan -->
+            <div class="mb-6 p-3 border border-green-200 rounded-md bg-green-50">
+                <label for="printFotoUkuran" class="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">4. Ukuran Foto Laporan:</label>
+                <select id="printFotoUkuran" class="w-full text-sm rounded border-gray-300 p-2 focus:ring-green-500 focus:border-green-500 shadow-sm cursor-pointer font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+                    <option value="besar">Besar &mdash; 1 tiang per halaman</option>
+                    <option value="sedang" selected>Sedang &mdash; 2 tiang per halaman</option>
+                    <option value="kecil">Kecil &mdash; 4 tiang per halaman</option>
+                </select>
+                <span class="block text-[10px] text-gray-500 mt-2 leading-tight">Makin kecil fotonya, makin banyak tiang yang muat dalam satu halaman A4 (hemat kertas). Setiap tiang tetap utuh dalam satu halaman, tidak terpotong.</span>
+            </div>
+
             <div class="flex justify-end space-x-3 pt-3 border-t border-gray-200">
                 <button onclick="closePrintModal()" class="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">Batal</button>
                 <button onclick="executePrint()" class="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700 shadow-sm flex items-center">
@@ -1322,10 +1333,21 @@
         //     lagi tinggi piksel tetap yang bisa membuat foto ke-5 terlempar ke halaman berikutnya.
         //  3. Kop 'Tabel Rekapitulasi' hanya muncul bila peta/tabel dicetak; laporan foto punya
         //     kop sendiri di tiap lembar (tidak ada lagi halaman pembuka yang hampir kosong).
+        //  4. UKURAN FOTO = jumlah tiang per halaman A4 (opts.fotoPerHalaman):
+        //       1 = Besar  : satu tiang satu halaman penuh (tata letak di atas, tidak berubah);
+        //       2 = Sedang : dua laporan bertumpuk dalam satu halaman, foto 3 + 2 (tiga di atas, dua di bawah);
+        //       4 = Kecil  : empat laporan (2 x 2) dalam satu halaman, foto 2 kolom x 3 baris.
+        //     Untuk 2 dan 4, setiap tiang berada di dalam satu '.kartu' yang tingginya TETAP (separuh /
+        //     seperempat lembar) dan tidak pernah terbelah antar halaman; '.lembar' = tepat satu halaman.
         function buatDokumenCetak(dataToPrint, titikPeta, opts) {
             const withMap = opts.withMap, withTable = opts.withTable, withFoto = opts.withFoto;
             const startNoStr = opts.startNoStr, endNoStr = opts.endNoStr;
             const adaKontenAwal = withMap || withTable; // kop + peta/tabel yang mendahului laporan foto
+
+            // Ukuran foto = jumlah tiang per halaman A4: 1 (Besar, bawaan), 2 (Sedang), 4 (Kecil).
+            // Nilai lain/kosong dianggap 1 sehingga pemanggil lama tetap mendapat tata letak semula.
+            let perHalaman = parseInt(opts.fotoPerHalaman, 10);
+            if (perHalaman !== 2 && perHalaman !== 4) perHalaman = 1;
 
             // Tinggi peta dari pilihan pengguna (mis. "600px"), dibatasi agar selalu muat satu
             // halaman bersama kop, judul, dan catatan legenda.
@@ -1364,7 +1386,7 @@
                     '</table></section>';
             }
 
-            // --- LAPORAN FOTO (1 titik = 1 lembar) ---
+            // --- LAPORAN FOTO (1, 2, atau 4 titik per lembar, sesuai ukuran foto yang dipilih) ---
             // Setiap <img> di sini TIDAK langsung diberi src: alamatnya disimpan di data-src, lalu skrip di
             // dokumen cetak (skripCetak) yang memuatnya bertahap, mengulang bila gagal, dan baru membuka
             // dialog cetak setelah semuanya selesai. Foto yang memang kosong di data diberi data-kosong.
@@ -1373,7 +1395,9 @@
                 const imgTag = (url, noUrut, urutFoto) => url
                     ? '<img data-src="' + escapeHtml(url) + '" data-no="' + escapeHtml(noUrut) + '" data-n="' + urutFoto + '" referrerpolicy="no-referrer" alt="">'
                     : '<img data-kosong="1" data-no="' + escapeHtml(noUrut) + '" data-n="' + urutFoto + '" alt="">';
-                dataToPrint.forEach((item, idx) => {
+                // Isi satu laporan tiang (kop + tabel data + 5 foto). Sama untuk semua ukuran foto;
+                // yang berbeda hanya pembungkus & CSS-nya (lihat di bawah).
+                const buatIsiLaporan = (item) => {
                     const clean = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
                     const getVal = (possibleKeys) => {
                         const cleanKeys = possibleKeys.map(clean);
@@ -1391,10 +1415,7 @@
                     const lat = item.lat ? parseFloat(item.lat).toFixed(5) : '-';
                     const lng = item.lng ? parseFloat(item.lng).toFixed(5) : '-';
 
-                    // Lembar pertama hanya perlu pindah halaman bila ada kop/peta/tabel di depannya.
-                    const kelasLembar = 'laporan-page' + ((idx > 0 || adaKontenAwal) ? ' halaman-baru' : '');
-                    fotoHtml += '<div class="' + kelasLembar + '">' +
-                        '<div class="laporan-header"><h1>LAPORAN PEKERJAAN PJU</h1><p>Sistem Informasi Pemeliharaan</p></div>' +
+                    return '<div class="laporan-header"><h1>LAPORAN PEKERJAAN PJU</h1><p>Sistem Informasi Pemeliharaan</p></div>' +
                         '<div class="laporan-divider"></div>' +
                         '<table class="laporan-table"><tbody>' +
                             '<tr><td class="col-label">No Urut / ID Tiang</td><td><strong>No. ' + escapeHtml(no) + '</strong> | SN: ' + escapeHtml(item.serialNumber || '-') + ' [Kec. ' + escapeHtml(item.kecamatan || '-') + ']</td></tr>' +
@@ -1410,9 +1431,28 @@
                             '<div class="foto-box"><p>3. Kondisi Selesai (Menyala)</p><div class="foto-bingkai">' + imgTag(urlSel, no, 3) + '</div></div>' +
                             '<div class="foto-box"><p>4. Barang Bekas/Rusak</p><div class="foto-bingkai">' + imgTag(urlLama, no, 4) + '</div></div>' +
                             '<div class="foto-box foto-baru"><p>5. Material Baru</p><div class="foto-bingkai">' + imgTag(urlBaru, no, 5) + '</div></div>' +
-                        '</div>' +
-                    '</div>';
-                });
+                        '</div>';
+                };
+
+                if (perHalaman === 1) {
+                    // BESAR: satu tiang = satu lembar penuh. Lembar pertama hanya perlu pindah halaman
+                    // bila ada kop/peta/tabel di depannya.
+                    dataToPrint.forEach((item, idx) => {
+                        const kelasLembar = 'laporan-page' + ((idx > 0 || adaKontenAwal) ? ' halaman-baru' : '');
+                        fotoHtml += '<div class="' + kelasLembar + '">' + buatIsiLaporan(item) + '</div>';
+                    });
+                } else {
+                    // SEDANG (2) / KECIL (4): setiap perHalaman tiang digabung dalam satu '.lembar' = tepat
+                    // satu halaman A4. Tiap tiang berada di '.kartu' bertinggi tetap sehingga tidak terbelah.
+                    for (let mulai = 0; mulai < dataToPrint.length; mulai += perHalaman) {
+                        const kelasLembar = 'lembar lembar-n' + perHalaman + ((mulai > 0 || adaKontenAwal) ? ' halaman-baru' : '');
+                        let kartu = '';
+                        dataToPrint.slice(mulai, mulai + perHalaman).forEach((item) => {
+                            kartu += '<div class="kartu">' + buatIsiLaporan(item) + '</div>';
+                        });
+                        fotoHtml += '<div class="' + kelasLembar + '">' + kartu + '</div>';
+                    }
+                }
             }
 
             // --- PETA ---
@@ -1491,7 +1531,35 @@
                     '.foto-bingkai img{position:absolute;left:2px;top:2px;width:calc(100% - 4px);height:calc(100% - 4px);object-fit:contain;visibility:hidden;}' +
                     '.foto-bingkai img.siap{visibility:visible;}' +
                     '.foto-baru{grid-column:1 / -1;justify-self:center;width:calc(50% - 6px);}' +
-                    '@media print{body{padding:0;} #bilahCetak{display:none !important;} .laporan-page{height:min(250mm,calc(100vh - 6mm));}}' +
+                    // Ukuran foto SEDANG (2 tiang/halaman) & KECIL (4 tiang/halaman): satu '.lembar' = satu halaman,
+                    // berisi 2 atau 4 '.kartu' (satu tiang per kartu) yang dibagi rata oleh grid. Isi kartu memakai
+                    // kelas yang sama dengan laporan Besar, hanya ukuran huruf/jarak/susunan fotonya yang dikecilkan.
+                    '.lembar{box-sizing:border-box;width:100%;height:250mm;overflow:hidden;display:grid;gap:6mm;break-inside:avoid;page-break-inside:avoid;font-family:Arial,Helvetica,sans-serif;}' +
+                    '.lembar-n2{grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(2,minmax(0,1fr));}' +
+                    '.lembar-n4{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));}' +
+                    '.kartu{box-sizing:border-box;min-width:0;min-height:0;overflow:hidden;display:flex;flex-direction:column;border:1px solid #9ca3af;border-radius:4px;}' +
+                    // -- Sedang: foto 3 di baris atas, 2 di baris bawah (di tengah)
+                    '.lembar-n2 .kartu{padding:3mm 4mm;}' +
+                    '.lembar-n2 .laporan-header{margin:0 0 3px;} .lembar-n2 .laporan-header h1{font-size:15px;margin:0 0 1px;letter-spacing:.5px;} .lembar-n2 .laporan-header p{font-size:9.5px;}' +
+                    '.lembar-n2 .laporan-divider{border-bottom-width:2px;margin:0 0 5px;}' +
+                    '.lembar-n2 .laporan-table{font-size:10px;margin:0 0 5px;} .lembar-n2 .laporan-table td{padding:2px 6px;line-height:1.2;}' +
+                    '.lembar-n2 .laporan-section-title{padding:2.5px;font-size:10px;margin:0 0 4px;}' +
+                    '.lembar-n2 .laporan-foto{grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:4px 8px;}' +
+                    '.lembar-n2 .foto-box{grid-column:span 2;grid-row:1;}' +
+                    '.lembar-n2 .foto-box:nth-child(4){grid-column:2 / span 2;grid-row:2;}' +
+                    '.lembar-n2 .foto-baru{grid-column:4 / span 2;grid-row:2;justify-self:stretch;width:auto;}' +
+                    '.lembar-n2 .foto-box p{font-size:9.5px;margin:0 0 2px;}' +
+                    // -- Kecil: kartu sempit (2 x 2 per halaman), foto 2 kolom x 3 baris seperti laporan Besar
+                    '.lembar-n4 .kartu{padding:2mm 2.5mm;}' +
+                    '.lembar-n4 .laporan-header{margin:0 0 2px;} .lembar-n4 .laporan-header h1{font-size:10.5px;margin:0;letter-spacing:0;} .lembar-n4 .laporan-header p{font-size:7.5px;}' +
+                    '.lembar-n4 .laporan-divider{border-bottom-width:1.5px;margin:0 0 3px;}' +
+                    '.lembar-n4 .laporan-table{font-size:8px;margin:0 0 3px;} .lembar-n4 .laporan-table td{padding:1.5px 4px;line-height:1.2;} .lembar-n4 .laporan-table .col-label{width:30%;}' +
+                    '.lembar-n4 .laporan-section-title{padding:2px;font-size:8px;margin:0 0 3px;}' +
+                    '.lembar-n4 .laporan-foto{gap:3px 6px;}' +
+                    '.lembar-n4 .foto-box p{font-size:7.5px;margin:0 0 1.5px;}' +
+                    '.lembar-n4 .foto-baru{width:calc(50% - 3px);}' +
+                    '.lembar-n4 .foto-bingkai{border-radius:2px;}' +
+                    '@media print{body{padding:0;} #bilahCetak{display:none !important;} .laporan-page,.lembar{height:min(250mm,calc(100vh - 6mm));}}' +
                 '</style></head><body>' +
                 '<div id="bilahCetak"><div class="teks"><div id="statusCetak">Menyiapkan dokumen cetak&hellip;</div><div id="infoCetak"></div></div>' +
                     '<button id="btnCoba" type="button">Coba Lagi Foto</button>' +
@@ -1509,7 +1577,10 @@
             const startNoStr = document.getElementById('printStartNo').value;
             const endNoStr = document.getElementById('printEndNo').value;
             const mapHeightOpt = document.getElementById('printMapHeightOpt').value;
-            
+            // Ukuran foto laporan -> jumlah tiang per halaman (nilai tak dikenal = 1, tata letak Besar).
+            const ukuranFotoEl = document.getElementById('printFotoUkuran');
+            const fotoPerHalaman = ({ besar: 1, sedang: 2, kecil: 4 })[ukuranFotoEl ? ukuranFotoEl.value : 'besar'] || 1;
+
             if(!withMap && !withTable && !withFoto) { showAlert('Peringatan', 'Pilih minimal satu opsi cetak.', true); return; }
             
             // --- 1. FILTER DATA BERDASARKAN NOMOR URUT ---
@@ -1554,7 +1625,7 @@
             closePrintModal();
 
             // --- 3. BANGUN DOKUMEN CETAK SEBAGAI JENDELA/TAB BARU YANG TERPISAH ---
-            const htmlCetak = buatDokumenCetak(dataToPrint, titikPeta, { withMap, withTable, withFoto, mapHeightOpt, startNoStr, endNoStr, petaDasar: petaDasarUntukCetak(basemapAktif.mainMap) });
+            const htmlCetak = buatDokumenCetak(dataToPrint, titikPeta, { withMap, withTable, withFoto, mapHeightOpt, startNoStr, endNoStr, fotoPerHalaman, petaDasar: petaDasarUntukCetak(basemapAktif.mainMap) });
             const jendelaCetak = window.open('', '_blank');
             if (!jendelaCetak) {
                 showAlert('Peringatan', 'Jendela cetak diblokir oleh browser. Mohon izinkan pop-up untuk halaman ini, lalu coba lagi.', true);
